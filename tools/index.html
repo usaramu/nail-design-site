@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="../assets/style.css">
 </head>
 <body>
-  <p><a href="../index.html">← 一覧へ戻る</a> ／ <a href="shopping.html">購入リストへ</a></p>
+  <p><a href="../index.html">← 一覧へ戻る</a> ／ <a href="shopping.html">購入リストへ</a> ／ <a href="designs.html">デザイン別の持ち物</a></p>
   <h1>持ち物リスト</h1>
   <p class="note">どの端末からも同じ内容が見られます。</p>
 
@@ -60,7 +60,7 @@
       return `
         <div class="card">
           ${i.low ? '<span class="badge">少なめ</span>' : ''}
-          ${i.photo ? `<img src="../${ND.esc(i.photo)}" alt="" loading="lazy">` : ''}
+          ${i.photo ? `<img src="../${ND.esc(i.photo)}" alt="${ND.esc(i.name)}" loading="lazy" class="zoom" title="タップで拡大">` : ''}
           <h3>${ND.esc(i.name)}</h3>
           <div class="meta">${[i.category, i.color, i.size, i.shop, i.note].filter(Boolean).map(ND.esc).join('<br>')}</div>
           <div class="actions">
@@ -77,6 +77,7 @@
     });
 
     $('#list').addEventListener('click', async e => {
+      if (e.target.matches('img.zoom')) return ND.lightbox(e.target.src, e.target.alt);
       const b = e.target.closest('button[data-act]');
       if (!b) return;
       const item = items.find(i => i.id === b.dataset.id);

@@ -34,6 +34,34 @@
         <span>チェックを付けると持ち物リストに移動します</span>
       </a>
     </li>
+    <li>
+      <a href="tools/designs.html">
+        デザイン別の持ち物
+        <span>デザインごとに、足りないもの・残り少なめを確認</span>
+      </a>
+    </li>
   </ul>
+
+  <div id="lowbox" hidden style="background:#fff;border:1px solid #e8d9d2;border-radius:10px;padding:16px;margin-top:24px">
+    <h2 style="font-size:1rem;color:#7a1f2b;margin:0 0 8px">残り少なめ（補充が必要）</h2>
+    <ul id="lowlist" style="padding-left:18px;margin:0;font-size:.9rem;line-height:1.8"></ul>
+    <p style="margin:8px 0 0"><a href="tools/shopping.html">購入リストで補充する →</a></p>
+  </div>
+
+  <script src="assets/config.js"></script>
+  <script src="assets/app.js"></script>
+  <script>
+    (async () => {
+      if (!ND.configured()) return;
+      try {
+        const items = await ND.list();
+        const low = items.filter(i => i.status === '持ち物' && i.low);
+        if (!low.length) return;
+        document.querySelector('#lowlist').innerHTML = low
+          .map(i => `<li>${ND.esc(i.name)}${i.color ? '（' + ND.esc(i.color) + '）' : ''}</li>`).join('');
+        document.querySelector('#lowbox').hidden = false;
+      } catch (e) { /* 読み込めなくてもトップは表示する */ }
+    })();
+  </script>
 </body>
 </html>

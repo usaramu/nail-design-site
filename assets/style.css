@@ -26,3 +26,6 @@ dialog label { display: block; font-size: .85rem; margin-top: 10px; }
 dialog input, dialog select { width: 100%; box-sizing: border-box; padding: 8px; border: 1px solid #d6c5bd; border-radius: 6px; font: inherit; margin-top: 4px; }
 dialog button[type=submit] { background: #7a1f2b; color: #fff; border-color: #7a1f2b; }
 .btns { text-align: right; margin-top: 16px; }
+.badge-inline { display: inline-block; background: #c0392b; color: #fff; font-size: .7rem; padding: 1px 6px; border-radius: 999px; margin-left: 4px; vertical-align: middle; }
+.lowrow { border-color: #c0392b; background: #fff8f6; }
+.card img.zoom { cursor: zoom-in; }

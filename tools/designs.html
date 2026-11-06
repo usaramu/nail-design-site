@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>デザイン別の持ち物</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <p><a href="../index.html">← 一覧へ戻る</a> ／ <a href="index.html">持ち物リストへ</a> ／ <a href="shopping.html">購入リストへ</a></p>
+  <h1>デザイン別の持ち物</h1>
+  <p class="note">スプレッドシートの「designs」列に書かれたデザインごとに、必要な持ち物と不足を表示します。</p>
+
+  <div id="list"></div>
+  <p id="msg" class="note"></p>
+
+  <script src="../assets/config.js"></script>
+  <script src="../assets/app.js"></script>
+  <script>
+    const $ = s => document.querySelector(s);
+
+    // デザインキー → 表示名とページ（新しいデザインを追加したらここに1行足す）
+    const DESIGNS = {
+      harvard: { name: 'Harvard Law Chic（SET02）', page: '../designs/harvard-law-chic/index.html' }
+    };
+
+    async function reload() {
+      if (!ND.configured()) {
+        $('#msg').textContent = 'まだ設定されていません（assets/config.js にURLを入れてください）。';
+        return;
+      }
+      try {
+        render(await ND.list());
+      } catch (e) {
+        $('#msg').textContent = '読み込みに失敗しました: ' + e.message;
+      }
+    }
+
+    function render(items) {
+      const keys = [...new Set(items.flatMap(ND.designsOf))];
+      if (!keys.length) {
+        $('#list').innerHTML = '<p class="done">「designs」列にデザイン名が入っている項目がありません。</p>';
+        return;
+      }
+      $('#list').innerHTML = keys.map(key => {
+        const d = DESIGNS[key] || { name: key, page: null };
+        const need = items.filter(i => ND.designsOf(i).includes(key));
+        const have = need.filter(i => i.status === '持ち物');
+        const missing = need.filter(i => i.status === '購入リスト');
+        const low = have.filter(i => i.low);
+        const line = list => list.length
+          ? list.map(i => `<li>${ND.esc(i.name)}${i.color ? '（' + ND.esc(i.color) + '）' : ''}</li>`).join('')
+          : '<li>なし</li>';
+        return `
+          <section class="card" style="margin-bottom:16px">
+            <h2 style="border:0;margin-top:0">${d.page ? `<a href="${d.page}">${ND.esc(d.name)}</a>` : ND.esc(d.name)}</h2>
+            <p class="meta">持っている ${have.length} / ${need.length}</p>
+            <h3 style="font-size:.95rem;margin:12px 0 4px">足りない（購入リスト）</h3>
+            <ul class="meta">${line(missing)}</ul>
+            <h3 style="font-size:.95rem;margin:12px 0 4px">残り少なめ</h3>
+            <ul class="meta">${line(low)}</ul>
+          </section>`;
+      }).join('');
+    }
+
+    reload();
+  </script>
+</body>
+</html>

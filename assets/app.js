@@ -52,6 +52,7 @@ const ND = (() => {
         <label>購入先<input name="shop" value="${esc(v.shop)}"></label>
         <label>メモ<input name="note" value="${esc(v.note)}"></label>
         <label>写真のパス（任意）<input name="photo" value="${esc(v.photo)}" placeholder="images/tools/xxx.jpg"></label>
+        <label>使うデザイン（任意・複数はカンマ区切り）<input name="designs" value="${esc(v.designs)}" placeholder="harvard"></label>
         <div class="btns"><button type="button" id="nd-cancel">キャンセル</button> <button type="submit">保存</button></div>
       </form>`;
     document.body.appendChild(dlg);
@@ -65,5 +66,23 @@ const ND = (() => {
     dlg.showModal();
   }
 
-  return { cfg, configured, esc, categories, list, send, openEditor };
+  // 「designs」列（例: "harvard, other"）を配列にする
+  const designsOf = i => String(i.designs || '').split(/[,、\s]+/).filter(Boolean);
+
+  // 写真の拡大表示（タップで閉じる）
+  function lightbox(src, alt) {
+    document.querySelector('#nd-lb')?.remove();
+    const d = document.createElement('dialog');
+    d.id = 'nd-lb';
+    d.style.cssText = 'padding:0;border:0;background:transparent;max-width:96vw;max-height:96vh';
+    d.innerHTML = `
+      <img src="${esc(src)}" alt="${esc(alt)}" style="max-width:96vw;max-height:88vh;border-radius:8px;display:block;margin:auto">
+      <p style="text-align:center"><button type="button" style="margin-top:8px">閉じる</button></p>`;
+    d.querySelector('button').onclick = () => d.close();
+    d.onclick = e => { if (e.target === d) d.close(); };
+    document.body.appendChild(d);
+    d.showModal();
+  }
+
+  return { cfg, configured, esc, categories, list, send, openEditor, designsOf, lightbox };
 })();

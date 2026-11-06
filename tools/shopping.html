@@ -7,10 +7,12 @@
   <link rel="stylesheet" href="../assets/style.css">
 </head>
 <body>
-  <p><a href="../index.html">← 一覧へ戻る</a> ／ <a href="index.html">持ち物リストへ</a></p>
+  <p><a href="../index.html">← 一覧へ戻る</a> ／ <a href="index.html">持ち物リストへ</a> ／ <a href="designs.html">デザイン別の持ち物</a></p>
   <h1>購入リスト</h1>
-  <p class="note">チェックを付けると持ち物リストに移動します。どの端末からも同じ内容が見られます。</p>
+  <p class="note">チェックを付けると持ち物リストに移動します（少なめの印は外れます）。どの端末からも同じ内容が見られます。</p>
   <p><button id="add">＋ 購入リストに追加</button></p>
+
+  <div id="low"></div>
   <div id="list"></div>
   <p id="msg" class="note"></p>
 
@@ -22,7 +24,7 @@
 
     async function reload() {
       if (!ND.configured()) {
-        $('#msg').textContent = 'まだ設定されていません（assets/config.js にURLと合言葉を入れてください）。';
+        $('#msg').textContent = 'まだ設定されていません（assets/config.js にURLを入れてください）。';
         return;
       }
       try {
@@ -34,15 +36,29 @@
     }
 
     function render() {
+      // 上部: 持ち物のうち「少なめ」になっているもの（補充候補）
+      const low = items.filter(i => i.status === '持ち物' && i.low);
+      $('#low').innerHTML = low.length
+        ? `<h2>残り少なめ（補充が必要）</h2>` + low.map(i => `
+            <div class="row lowrow">
+              <span>
+                <strong>${ND.esc(i.name)}</strong>
+                <small>${ND.esc([i.color, i.size, i.shop].filter(Boolean).join(' ／ '))}</small>
+              </span>
+              <button data-restock="${ND.esc(i.id)}">購入リストに入れる</button>
+            </div>`).join('')
+        : '';
+
+      // 本体: 購入リスト（少なめのものを各カテゴリの先頭に）
       const rest = items.filter(i => i.status === '購入リスト');
       $('#list').innerHTML = ND.categories.map(cat => {
-        const rows = rest.filter(i => i.category === cat);
+        const rows = rest.filter(i => i.category === cat).sort((a, b) => Number(b.low) - Number(a.low));
         if (!rows.length) return '';
         return `<h2>${ND.esc(cat)}</h2>` + rows.map(i => `
           <div class="row">
             <input type="checkbox" data-check="${ND.esc(i.id)}" title="持ち物に移動">
             <span>
-              <strong>${ND.esc(i.name)}</strong>
+              <strong>${ND.esc(i.name)}</strong>${i.low ? ' <span class="badge-inline">少なめ</span>' : ''}
               <small>${ND.esc([i.color, i.size, i.shop, i.note].filter(Boolean).join(' ／ '))}</small>
             </span>
             <button data-edit="${ND.esc(i.id)}">編集</button>
@@ -50,11 +66,26 @@
       }).join('') || '<p class="done">購入リストは空です。</p>';
     }
 
+    // 購入リストに戻す（補充候補 → 購入リスト）
+    $('#low').addEventListener('click', async e => {
+      const b = e.target.closest('button[data-restock]');
+      if (!b) return;
+      try {
+        await ND.send('setStatus', { id: b.dataset.restock, status: '購入リスト' });
+        await reload();
+      } catch (err) {
+        alert('更新できませんでした: ' + err.message);
+      }
+    });
+
+    // チェック → 持ち物へ移動（少なめの印は外す）
     $('#list').addEventListener('change', async e => {
       if (!e.target.matches('input[type=checkbox]')) return;
       e.target.disabled = true;
       try {
-        await ND.send('setStatus', { id: e.target.dataset.check, status: '持ち物' });
+        const id = e.target.dataset.check;
+        await ND.send('setStatus', { id, status: '持ち物' });
+        await ND.send('setLow', { id, low: false });
         await reload();
       } catch (err) {
         alert('移動できませんでした: ' + err.message);
