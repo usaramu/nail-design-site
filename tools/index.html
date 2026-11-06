@@ -8,6 +8,7 @@
     body { font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; background: #faf6f1; color: #3a2a2a; margin: 0 auto; padding: 24px 16px; max-width: 900px; }
     h1 { color: #7a1f2b; font-size: 1.4rem; margin: 0 0 8px; }
     a { color: #7a1f2b; }
+    .note { font-size: .85rem; color: #7a6a6a; line-height: 1.7; margin: 0 0 8px; }
     .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
     .tabs button { border: 1px solid #c9a9a2; background: #fff; border-radius: 999px; padding: 6px 14px; cursor: pointer; font: inherit; font-size: .9rem; color: #3a2a2a; }
     .tabs button.on { background: #7a1f2b; color: #fff; border-color: #7a1f2b; }
@@ -17,6 +18,8 @@
     .card h3 { font-size: 1rem; margin: 0 0 6px; }
     .meta { font-size: .85rem; color: #6a5a5a; line-height: 1.6; }
     .badge { position: absolute; top: 10px; right: 10px; background: #c0392b; color: #fff; font-size: .75rem; padding: 2px 8px; border-radius: 999px; }
+    .actions { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+    .actions button { font: inherit; font-size: .8rem; border: 1px solid #c9a9a2; background: #fff; border-radius: 6px; padding: 4px 10px; cursor: pointer; color: #7a1f2b; }
     .empty { color: #8a7a7a; font-size: .9rem; }
     details { background: #fff; border: 1px solid #e8d9d2; border-radius: 10px; padding: 12px 16px; margin-top: 24px; }
     summary { cursor: pointer; font-weight: bold; color: #7a1f2b; }
@@ -25,17 +28,19 @@
     .btn { margin-top: 14px; background: #7a1f2b; color: #fff; border: 0; border-radius: 6px; padding: 10px 16px; font: inherit; cursor: pointer; }
     ol { font-size: .9rem; line-height: 1.8; padding-left: 20px; }
     textarea.out { width: 100%; box-sizing: border-box; font-family: monospace; font-size: .85rem; height: 140px; margin-top: 10px; }
+    .sync { margin-top: 24px; background: #fff; border: 1px solid #e8d9d2; border-radius: 10px; padding: 12px 16px; }
   </style>
 </head>
 <body>
-  <p><a href="../index.html">← 一覧へ戻る</a></p>
+  <p><a href="../index.html">← 一覧へ戻る</a> ／ <a href="shopping.html">購入リストへ</a></p>
   <h1>持ち物リスト</h1>
+  <p class="note">購入リストでチェックしたものは、自動でここに入ります。「少なめ」の印や購入リストからの移動は、このブラウザに保存されます。</p>
 
   <div class="tabs" id="tabs"></div>
   <div class="grid" id="list"></div>
 
   <details>
-    <summary>＋ 持ち物を追加する</summary>
+    <summary>＋ 持ち物を直接追加する</summary>
     <form id="form">
       <label>名前<input name="name" required placeholder="例: ラメゴールド"></label>
       <label>カテゴリ<select name="category" id="cat"></select></label>
@@ -61,18 +66,44 @@
     </div>
   </details>
 
-  <script>
-    const DATA_URL = '../data/items.json';
-    let data = { categories: [], items: [] };
-    let filter = 'all';
+  <div class="sync">
+    <p class="note">購入リストからの移動は、このブラウザだけに保存されます。別の端末にも反映したいときは、下のボタンで文章をコピーし、<code>data/items.json</code> に貼り付けてください。</p>
+    <button class="btn" id="sync" type="button">移動分をまとめてコピー</button>
+    <textarea class="out" id="syncOut" readonly hidden></textarea>
+  </div>
 
+  <script>
+    const K_OWNED = 'nd_owned_ids';
+    const K_LOW = 'nd_low';
     const $ = s => document.querySelector(s);
     const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const ls = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
+
+    let data = { categories: [], items: [] };
+    let shop = { items: [] };
+    let filter = 'all';
+
+    // 持ち物 = items.json + 購入リストでチェックしたもの（items.jsonに同じidが無いもの）
+    function allItems() {
+      const owned = ls(K_OWNED, []);
+      const listIds = new Set(data.items.map(i => i.id));
+      const fromShop = shop.items
+        .filter(s => owned.includes(s.id) && !listIds.has(s.id))
+        .map(s => ({ ...s, _src: 'shop' }));
+      return [...data.items, ...fromShop];
+    }
+
+    // 「少なめ」: ブラウザ上の設定があればそれを優先、なければitems.jsonのlow
+    const isLow = i => { const m = ls(K_LOW, {}); return i.id in m ? !!m[i.id] : !!i.low; };
 
     async function load() {
       try {
-        const res = await fetch(DATA_URL, { cache: 'no-store' });
-        data = await res.json();
+        const [d, s] = await Promise.all([
+          fetch('../data/items.json', { cache: 'no-store' }).then(r => r.json()),
+          fetch('../data/shopping.json', { cache: 'no-store' }).then(r => r.json())
+        ]);
+        data = d;
+        shop = s;
       } catch (e) {
         $('#list').innerHTML = '<p class="empty">データを読み込めませんでした。</p>';
         return;
@@ -82,17 +113,18 @@
     }
 
     function render() {
+      const all = allItems();
       const tabs = [
-        ['all', 'すべて', data.items.length],
-        ['low', '残り少なめ', data.items.filter(i => i.low).length],
-        ...data.categories.map(c => [c, c, data.items.filter(i => i.category === c).length])
+        ['all', 'すべて', all.length],
+        ['low', '残り少なめ', all.filter(isLow).length],
+        ...data.categories.map(c => [c, c, all.filter(i => i.category === c).length])
       ];
       $('#tabs').innerHTML = tabs.map(([k, label, n]) =>
         `<button data-k="${esc(k)}" class="${filter === k ? 'on' : ''}">${esc(label)}（${n}）</button>`).join('');
       $('#tabs').querySelectorAll('button').forEach(b => b.onclick = () => { filter = b.dataset.k; render(); });
 
-      let items = data.items;
-      if (filter === 'low') items = items.filter(i => i.low);
+      let items = all;
+      if (filter === 'low') items = items.filter(isLow);
       else if (filter !== 'all') items = items.filter(i => i.category === filter);
 
       if (!items.length) {
@@ -101,7 +133,7 @@
       }
       $('#list').innerHTML = items.map(i => `
         <div class="card">
-          ${i.low ? '<span class="badge">少なめ</span>' : ''}
+          ${isLow(i) ? '<span class="badge">少なめ</span>' : ''}
           ${i.photo ? `<img src="../${esc(i.photo)}" alt="${esc(i.name)}" loading="lazy">` : ''}
           <h3>${esc(i.name)}</h3>
           <div class="meta">
@@ -111,8 +143,27 @@
             ${i.shop ? `購入先: ${esc(i.shop)}<br>` : ''}
             ${i.note ? `メモ: ${esc(i.note)}` : ''}
           </div>
+          <div class="actions">
+            <button data-low="${esc(i.id)}">${isLow(i) ? '少なめを解除' : '少なめにする'}</button>
+            ${i._src === 'shop' ? `<button data-undo="${esc(i.id)}">購入リストに戻す</button>` : ''}
+          </div>
         </div>`).join('');
     }
+
+    $('#list').addEventListener('click', e => {
+      const lowId = e.target.dataset.low;
+      const undoId = e.target.dataset.undo;
+      if (lowId) {
+        const item = allItems().find(i => i.id === lowId);
+        const m = ls(K_LOW, {});
+        m[lowId] = !isLow(item);
+        localStorage.setItem(K_LOW, JSON.stringify(m));
+      }
+      if (undoId) {
+        localStorage.setItem(K_OWNED, JSON.stringify(ls(K_OWNED, []).filter(x => x !== undoId)));
+      }
+      if (lowId || undoId) render();
+    });
 
     $('#form').addEventListener('submit', e => {
       e.preventDefault();
@@ -136,6 +187,18 @@
     $('#copy').onclick = () => {
       navigator.clipboard.writeText($('#out').value);
       $('#copy').textContent = 'コピーしました';
+    };
+
+    $('#sync').onclick = () => {
+      const moved = allItems().filter(i => i._src === 'shop');
+      const out = $('#syncOut');
+      if (!moved.length) {
+        out.hidden = false;
+        out.value = '移動した項目はまだありません。';
+        return;
+      }
+      out.value = moved.map(({ _src, ...rest }) => JSON.stringify({ ...rest, low: isLow(rest) }, null, 2)).join(',\n') + ',';
+      out.hidden = false;
     };
 
     load();
