@@ -12,14 +12,39 @@
   <p class="note">スプレッドシートの「designs」列に書かれたデザインごとに、必要な持ち物と不足を表示します。</p>
 
   <div id="list"></div>
+
+  <details class="card" style="margin-top:24px">
+    <summary style="cursor:pointer;font-weight:bold;color:#7a1f2b">＋ 新しいデザインを追加（購入リストにも反映）</summary>
+    <form id="newform" style="margin-top:12px">
+      <label style="display:block;font-size:.85rem">デザインのキー（英字・例: spring）
+        <input id="nkey" required style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #d6c5bd;border-radius:6px;font:inherit">
+      </label>
+      <label style="display:block;font-size:.85rem;margin-top:10px">表示名（例: Spring Pink）
+        <input id="nname" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #d6c5bd;border-radius:6px;font:inherit">
+      </label>
+
+      <h3 style="font-size:.95rem;margin:14px 0 4px">今ある持ち物から使うもの（チェック）</h3>
+      <div id="pick" class="meta"></div>
+
+      <h3 style="font-size:.95rem;margin:14px 0 4px">新しく買うもの（1行に1つ）</h3>
+      <p class="note" style="margin:0 0 6px">書式: 名前 | カテゴリ | 色・番号 | サイズ | 購入先<br>（カテゴリは「ジェル・ツール・パーツ・基本用品」のどれか。省略時は基本用品）</p>
+      <textarea id="nnew" rows="6" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #d6c5bd;border-radius:6px;font:inherit" placeholder="ピンクパール | パーツ | ピンク | 約2mm | 未確定"></textarea>
+
+      <div style="text-align:right;margin-top:14px">
+        <button type="submit" id="save" style="background:#7a1f2b;color:#fff;border-color:#7a1f2b">保存して購入リストに反映</button>
+      </div>
+    </form>
+  </details>
+
   <p id="msg" class="note"></p>
 
   <script src="../assets/config.js"></script>
   <script src="../assets/app.js"></script>
   <script>
     const $ = s => document.querySelector(s);
+    let items = [];
 
-    // デザインキー → 表示名とページ（新しいデザインを追加したらここに1行足す）
+    // デザインキー → 表示名とページ（表示名を変えたいときはここを書き換える）
     const DESIGNS = {
       harvard: { name: 'Harvard Law Chic（SET02）', page: '../designs/harvard-law-chic/index.html' }
     };
@@ -30,13 +55,15 @@
         return;
       }
       try {
-        render(await ND.list());
+        items = await ND.list();
+        render();
+        renderPick();
       } catch (e) {
         $('#msg').textContent = '読み込みに失敗しました: ' + e.message;
       }
     }
 
-    function render(items) {
+    function render() {
       const keys = [...new Set(items.flatMap(ND.designsOf))];
       if (!keys.length) {
         $('#list').innerHTML = '<p class="done">「designs」列にデザイン名が入っている項目がありません。</p>';
@@ -62,6 +89,60 @@
           </section>`;
       }).join('');
     }
+
+    // 既存の項目から使うものを選ぶ一覧（持ち物・購入リストの両方）
+    function renderPick() {
+      $('#pick').innerHTML = items.length
+        ? items.map(i => `
+            <label style="display:flex;gap:8px;align-items:center;margin:4px 0">
+              <input type="checkbox" value="${ND.esc(i.id)}">
+              <span>${ND.esc(i.name)}${i.color ? '（' + ND.esc(i.color) + '）' : ''}
+                <small>［${i.status === '持ち物' ? '持ち物' : '購入リスト'}］</small></span>
+            </label>`).join('')
+        : '<p class="empty">項目がまだありません。</p>';
+    }
+
+    $('#newform').addEventListener('submit', async e => {
+      e.preventDefault();
+      const key = $('#nkey').value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+      if (!key) return alert('デザインのキーは英字で入力してください（例: spring）');
+      const btn = $('#save');
+      btn.disabled = true;
+      try {
+        // 1) 今ある項目に、このデザインのキーを付ける
+        for (const cb of $('#pick').querySelectorAll('input[type=checkbox]:checked')) {
+          const it = items.find(i => i.id === cb.value);
+          if (!it) continue;
+          const keys = ND.designsOf(it);
+          if (!keys.includes(key)) keys.push(key);
+          await ND.send('update', { id: it.id, fields: { designs: keys.join(', ') } });
+        }
+        // 2) 新しく買うものを、購入リストに追加
+        const lines = $('#nnew').value.split('\n').map(l => l.trim()).filter(Boolean);
+        for (const line of lines) {
+          const [name, cat, color, size, shop] = line.split('|').map(s => (s || '').trim());
+          if (!name) continue;
+          await ND.send('add', { item: {
+            name,
+            category: ND.categories.includes(cat) ? cat : '基本用品',
+            color: color || '',
+            size: size || '',
+            shop: shop || '',
+            designs: key,
+            status: '購入リスト',
+            low: false
+          } });
+        }
+        $('#newform').reset();
+        $('#msg').textContent = `「${key}」を追加しました。購入リストにも反映されています。` +
+          `（表示名を付けるには、このページの DESIGNS に「${key}」を追加してください）`;
+        await reload();
+      } catch (err) {
+        alert('追加できませんでした: ' + err.message);
+      } finally {
+        btn.disabled = false;
+      }
+    });
 
     reload();
   </script>
