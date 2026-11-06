@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>デザイン別の持ち物</title>
+  <title>デザイン一覧</title>
   <link rel="stylesheet" href="../assets/style.css">
 </head>
 <body>
-  <p><a href="../index.html">← 一覧へ戻る</a> ／ <a href="index.html">持ち物リストへ</a> ／ <a href="shopping.html">購入リストへ</a></p>
-  <h1>デザイン別の持ち物</h1>
-  <p class="note">スプレッドシートの「designs」列に書かれたデザインごとに、必要な持ち物と不足を表示します。</p>
+  <p><a href="../index.html">← ホームへ戻る</a></p>
+  <h1>デザイン一覧</h1>
+  <p class="note">デザインごとに、制作ガイドと必要な持ち物（持っている数・足りないもの・残り少なめ）を確認できます。</p>
 
   <div id="list"></div>
 
@@ -44,9 +44,9 @@
     const $ = s => document.querySelector(s);
     let items = [];
 
-    // デザインキー → 表示名とページ（表示名を変えたいときはここを書き換える）
+    // デザインキー → 表示名とガイドページ（ガイドを作ったら page を書く）
     const DESIGNS = {
-      harvard: { name: 'Harvard Law Chic（SET02）', page: '../designs/harvard-law-chic/index.html' }
+      harvard: { name: 'Harvard Law Chic（SET02）', page: 'harvard-law-chic/index.html', note: '右手・左手の制作ガイドと新規購入品リスト' }
     };
 
     async function reload() {
@@ -66,7 +66,7 @@
     function render() {
       const keys = [...new Set(items.flatMap(ND.designsOf))];
       if (!keys.length) {
-        $('#list').innerHTML = '<p class="done">「designs」列にデザイン名が入っている項目がありません。</p>';
+        $('#list').innerHTML = '<p class="done">まだデザインがありません。下の「＋ 新しいデザインを追加」から登録できます。</p>';
         return;
       }
       $('#list').innerHTML = keys.map(key => {
@@ -80,7 +80,8 @@
           : '<li>なし</li>';
         return `
           <section class="card" style="margin-bottom:16px">
-            <h2 style="border:0;margin-top:0">${d.page ? `<a href="${d.page}">${ND.esc(d.name)}</a>` : ND.esc(d.name)}</h2>
+            <h2 style="border:0;margin:0 0 6px;font-size:1.05rem">${d.page ? `<a href="${d.page}">${ND.esc(d.name)}</a>` : ND.esc(d.name)}</h2>
+            ${d.note ? `<p class="note" style="margin:0 0 8px">${ND.esc(d.note)}</p>` : ''}
             <p class="meta">持っている ${have.length} / ${need.length}</p>
             <h3 style="font-size:.95rem;margin:12px 0 4px">足りない（購入リスト）</h3>
             <ul class="meta">${line(missing)}</ul>
@@ -90,7 +91,6 @@
       }).join('');
     }
 
-    // 既存の項目から使うものを選ぶ一覧（持ち物・購入リストの両方）
     function renderPick() {
       $('#pick').innerHTML = items.length
         ? items.map(i => `
@@ -109,7 +109,6 @@
       const btn = $('#save');
       btn.disabled = true;
       try {
-        // 1) 今ある項目に、このデザインのキーを付ける
         for (const cb of $('#pick').querySelectorAll('input[type=checkbox]:checked')) {
           const it = items.find(i => i.id === cb.value);
           if (!it) continue;
@@ -117,7 +116,6 @@
           if (!keys.includes(key)) keys.push(key);
           await ND.send('update', { id: it.id, fields: { designs: keys.join(', ') } });
         }
-        // 2) 新しく買うものを、購入リストに追加
         const lines = $('#nnew').value.split('\n').map(l => l.trim()).filter(Boolean);
         for (const line of lines) {
           const [name, cat, color, size, shop] = line.split('|').map(s => (s || '').trim());
