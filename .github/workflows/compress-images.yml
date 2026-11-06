@@ -1,0 +1,46 @@
+name: Compress images
+
+# 画像がアップロード（push）されたら、大きな画像を自動で縮小して保存し直します
+on:
+  push:
+    paths:
+      - '**/*.png'
+      - '**/*.jpg'
+      - '**/*.jpeg'
+
+permissions:
+  contents: write
+
+jobs:
+  compress:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ImageMagick
+        run: sudo apt-get update && sudo apt-get install -y imagemagick
+
+      - name: Shrink large images (max 1200px, under about 400KB)
+        run: |
+          find . -path ./.git -prune -o \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' \) -print | while read -r f; do
+            size=$(stat -c %s "$f")
+            if [ "$size" -gt 400000 ]; then
+              mogrify -resize '1200x1200>' -strip "$f"
+              case "$f" in
+                *.png|*.PNG) mogrify -quality 90 "$f" ;;
+                *) mogrify -quality 80 "$f" ;;
+              esac
+            fi
+          done
+
+      - name: Commit changes
+        run: |
+          git config user.name "image-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes"
+          else
+            git commit -m "Compress large images"
+            git push
+          fi

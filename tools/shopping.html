@@ -4,85 +4,80 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>購入リスト</title>
-  <style>
-    body { font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; background: #faf6f1; color: #3a2a2a; margin: 0 auto; padding: 24px 16px; max-width: 700px; }
-    h1 { color: #7a1f2b; font-size: 1.4rem; margin: 0 0 8px; }
-    h2 { color: #7a1f2b; font-size: 1.05rem; margin: 24px 0 8px; border-bottom: 1px solid #e8d9d2; padding-bottom: 4px; }
-    a { color: #7a1f2b; }
-    .note { font-size: .85rem; color: #7a6a6a; line-height: 1.7; }
-    .row { display: flex; gap: 10px; align-items: flex-start; background: #fff; border: 1px solid #e8d9d2; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; cursor: pointer; }
-    .row input { margin-top: 4px; width: 18px; height: 18px; flex-shrink: 0; }
-    .row strong { font-size: .95rem; }
-    .row small { display: block; color: #7a6a6a; font-size: .8rem; line-height: 1.5; }
-    .done { color: #8a7a7a; text-align: center; padding: 24px 0; }
-  </style>
+  <link rel="stylesheet" href="../assets/style.css">
 </head>
 <body>
   <p><a href="../index.html">← 一覧へ戻る</a> ／ <a href="index.html">持ち物リストへ</a></p>
   <h1>購入リスト</h1>
-  <p class="note">チェックを付けると、持ち物リストに移動します。<br>チェックはこのブラウザに保存されます。</p>
-
+  <p class="note">チェックを付けると持ち物リストに移動します。どの端末からも同じ内容が見られます。</p>
+  <p><button id="add">＋ 購入リストに追加</button></p>
   <div id="list"></div>
+  <p id="msg" class="note"></p>
 
+  <script src="../assets/config.js"></script>
+  <script src="../assets/app.js"></script>
   <script>
-    const K_OWNED = 'nd_owned_ids';
     const $ = s => document.querySelector(s);
-    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-    const ls = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
+    let items = [];
 
-    let shop = { categories: [], items: [] };
-    let list = { items: [] };
-
-    async function load() {
-      try {
-        const [s, l] = await Promise.all([
-          fetch('../data/shopping.json', { cache: 'no-store' }).then(r => r.json()),
-          fetch('../data/items.json', { cache: 'no-store' }).then(r => r.json())
-        ]);
-        shop = s;
-        list = l;
-      } catch (e) {
-        $('#list').innerHTML = '<p class="done">データを読み込めませんでした。</p>';
+    async function reload() {
+      if (!ND.configured()) {
+        $('#msg').textContent = 'まだ設定されていません（assets/config.js にURLと合言葉を入れてください）。';
         return;
       }
-      render();
+      try {
+        items = await ND.list();
+        render();
+      } catch (e) {
+        $('#msg').textContent = '読み込みに失敗しました: ' + e.message;
+      }
     }
 
     function render() {
-      // 持ち物に移動済み（チェック済み・持ち物リストに既にある）ものは表示しない
-      const owned = ls(K_OWNED, []);
-      const done = new Set([...owned, ...list.items.map(i => i.id)]);
-      const remaining = shop.items.filter(i => !done.has(i.id));
-
-      if (!remaining.length) {
-        $('#list').innerHTML = '<p class="done">すべて持ち物に移動しました。</p>';
-        return;
-      }
-
-      $('#list').innerHTML = shop.categories.map(cat => {
-        const rows = remaining.filter(i => i.category === cat);
+      const rest = items.filter(i => i.status === '購入リスト');
+      $('#list').innerHTML = ND.categories.map(cat => {
+        const rows = rest.filter(i => i.category === cat);
         if (!rows.length) return '';
-        return `<h2>${esc(cat)}</h2>` + rows.map(i => `
-          <label class="row">
-            <input type="checkbox" data-id="${esc(i.id)}">
+        return `<h2>${ND.esc(cat)}</h2>` + rows.map(i => `
+          <div class="row">
+            <input type="checkbox" data-check="${ND.esc(i.id)}" title="持ち物に移動">
             <span>
-              <strong>${esc(i.name)}</strong>
-              <small>${[i.color && '色・番号: ' + i.color, i.size && 'サイズ: ' + i.size, i.shop && '購入先: ' + i.shop, i.note].filter(Boolean).map(esc).join(' ／ ')}</small>
+              <strong>${ND.esc(i.name)}</strong>
+              <small>${ND.esc([i.color, i.size, i.shop, i.note].filter(Boolean).join(' ／ '))}</small>
             </span>
-          </label>`).join('');
-      }).join('');
+            <button data-edit="${ND.esc(i.id)}">編集</button>
+          </div>`).join('');
+      }).join('') || '<p class="done">購入リストは空です。</p>';
     }
 
-    $('#list').addEventListener('change', e => {
-      if (e.target.type !== 'checkbox') return;
-      const id = e.target.dataset.id;
-      const owned = ls(K_OWNED, []);
-      if (!owned.includes(id)) owned.push(id);
-      localStorage.setItem(K_OWNED, JSON.stringify(owned));
-      render();
+    $('#list').addEventListener('change', async e => {
+      if (!e.target.matches('input[type=checkbox]')) return;
+      e.target.disabled = true;
+      try {
+        await ND.send('setStatus', { id: e.target.dataset.check, status: '持ち物' });
+        await reload();
+      } catch (err) {
+        alert('移動できませんでした: ' + err.message);
+        e.target.disabled = false;
+      }
     });
 
-    load();
+    $('#list').addEventListener('click', e => {
+      const b = e.target.closest('button[data-edit]');
+      if (!b) return;
+      const item = items.find(i => i.id === b.dataset.edit);
+      ND.openEditor(item, async f => {
+        await ND.send('update', { id: item.id, fields: f });
+        await reload();
+      });
+    });
+
+    $('#add').onclick = () => ND.openEditor(null, async f => {
+      await ND.send('add', { item: { ...f, status: '購入リスト', low: false } });
+      await reload();
+    });
+
+    reload();
   </script>
 </body>
 </html>

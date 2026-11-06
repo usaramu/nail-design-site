@@ -1,0 +1,28 @@
+body { font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; background: #faf6f1; color: #3a2a2a; margin: 0 auto; padding: 24px 16px; max-width: 900px; }
+h1 { color: #7a1f2b; font-size: 1.4rem; margin: 0 0 8px; }
+h2 { color: #7a1f2b; font-size: 1.05rem; margin: 24px 0 8px; border-bottom: 1px solid #e8d9d2; padding-bottom: 4px; }
+a { color: #7a1f2b; }
+.note { font-size: .85rem; color: #7a6a6a; line-height: 1.7; }
+button { font: inherit; font-size: .85rem; border: 1px solid #c9a9a2; background: #fff; color: #7a1f2b; border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+.tabs button { border-radius: 999px; color: #3a2a2a; }
+.tabs button.on { background: #7a1f2b; color: #fff; border-color: #7a1f2b; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.card, .row { background: #fff; border: 1px solid #e8d9d2; border-radius: 10px; padding: 12px; position: relative; }
+.row { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; }
+.row span { flex: 1; }
+.row small { display: block; color: #7a6a6a; font-size: .8rem; line-height: 1.5; }
+.row input[type=checkbox] { width: 18px; height: 18px; flex-shrink: 0; }
+.card img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 6px; margin-bottom: 8px; }
+.card h3 { font-size: 1rem; margin: 0 0 6px; }
+.meta { font-size: .85rem; color: #6a5a5a; line-height: 1.6; }
+.badge { position: absolute; top: 10px; right: 10px; background: #c0392b; color: #fff; font-size: .75rem; padding: 2px 8px; border-radius: 999px; }
+.actions { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+.actions button { font-size: .8rem; padding: 4px 10px; }
+.empty, .done { color: #8a7a7a; font-size: .9rem; }
+dialog { border: 1px solid #e8d9d2; border-radius: 12px; width: min(92vw, 420px); padding: 16px; }
+dialog h3 { color: #7a1f2b; margin: 0 0 4px; }
+dialog label { display: block; font-size: .85rem; margin-top: 10px; }
+dialog input, dialog select { width: 100%; box-sizing: border-box; padding: 8px; border: 1px solid #d6c5bd; border-radius: 6px; font: inherit; margin-top: 4px; }
+dialog button[type=submit] { background: #7a1f2b; color: #fff; border-color: #7a1f2b; }
+.btns { text-align: right; margin-top: 16px; }
