@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>持ち物リスト</title>
+  <style>
+    body { font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; background: #faf6f1; color: #3a2a2a; margin: 0 auto; padding: 24px 16px; max-width: 900px; }
+    h1 { color: #7a1f2b; font-size: 1.4rem; margin: 0 0 8px; }
+    a { color: #7a1f2b; }
+    .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+    .tabs button { border: 1px solid #c9a9a2; background: #fff; border-radius: 999px; padding: 6px 14px; cursor: pointer; font: inherit; font-size: .9rem; color: #3a2a2a; }
+    .tabs button.on { background: #7a1f2b; color: #fff; border-color: #7a1f2b; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+    .card { background: #fff; border: 1px solid #e8d9d2; border-radius: 10px; padding: 12px; position: relative; }
+    .card img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 6px; margin-bottom: 8px; }
+    .card h3 { font-size: 1rem; margin: 0 0 6px; }
+    .meta { font-size: .85rem; color: #6a5a5a; line-height: 1.6; }
+    .badge { position: absolute; top: 10px; right: 10px; background: #c0392b; color: #fff; font-size: .75rem; padding: 2px 8px; border-radius: 999px; }
+    .empty { color: #8a7a7a; font-size: .9rem; }
+    details { background: #fff; border: 1px solid #e8d9d2; border-radius: 10px; padding: 12px 16px; margin-top: 24px; }
+    summary { cursor: pointer; font-weight: bold; color: #7a1f2b; }
+    form label { display: block; font-size: .85rem; margin-top: 10px; }
+    form input, form select { width: 100%; box-sizing: border-box; padding: 8px; border: 1px solid #d6c5bd; border-radius: 6px; font: inherit; margin-top: 4px; }
+    .btn { margin-top: 14px; background: #7a1f2b; color: #fff; border: 0; border-radius: 6px; padding: 10px 16px; font: inherit; cursor: pointer; }
+    ol { font-size: .9rem; line-height: 1.8; padding-left: 20px; }
+    textarea.out { width: 100%; box-sizing: border-box; font-family: monospace; font-size: .85rem; height: 140px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <p><a href="../index.html">← 一覧へ戻る</a></p>
+  <h1>持ち物リスト</h1>
+
+  <div class="tabs" id="tabs"></div>
+  <div class="grid" id="list"></div>
+
+  <details>
+    <summary>＋ 持ち物を追加する</summary>
+    <form id="form">
+      <label>名前<input name="name" required placeholder="例: ラメゴールド"></label>
+      <label>カテゴリ<select name="category" id="cat"></select></label>
+      <label>色・番号<input name="color" placeholder="例: 3 ラメゴールド"></label>
+      <label>サイズ・容量<input name="size" placeholder="例: 3.5mL / 約2mm"></label>
+      <label>購入先<input name="shop" placeholder="例: ダイソー"></label>
+      <label>写真のパス（任意）<input name="photo" placeholder="例: images/tools/gold.jpg"></label>
+      <label>メモ（任意）<input name="note"></label>
+      <label><input type="checkbox" name="low" style="width:auto"> 少なくなってきた</label>
+      <button class="btn" type="submit">追加用の文章を作る</button>
+    </form>
+
+    <div id="result" hidden>
+      <ol>
+        <li>写真がある場合は、先に GitHub の「Add file → Upload files」で <code>images/tools/</code> に写真をアップロードします。</li>
+        <li>下の文章をコピーします。</li>
+        <li><a href="https://github.com/usaramu/nail-design-site/edit/main/data/items.json" target="_blank" rel="noopener">data/items.json を GitHub で開く</a>（鉛筆アイコンで編集）</li>
+        <li><code>"items": [</code> の行の直後に貼り付けて、「Commit changes」を押します。</li>
+        <li>一覧が空のときは、貼り付けた文章の末尾のカンマ（,）を消してください。</li>
+      </ol>
+      <textarea class="out" id="out" readonly></textarea>
+      <button class="btn" id="copy" type="button">コピー</button>
+    </div>
+  </details>
+
+  <script>
+    const DATA_URL = '../data/items.json';
+    let data = { categories: [], items: [] };
+    let filter = 'all';
+
+    const $ = s => document.querySelector(s);
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    async function load() {
+      try {
+        const res = await fetch(DATA_URL, { cache: 'no-store' });
+        data = await res.json();
+      } catch (e) {
+        $('#list').innerHTML = '<p class="empty">データを読み込めませんでした。</p>';
+        return;
+      }
+      $('#cat').innerHTML = data.categories.map(c => `<option>${esc(c)}</option>`).join('');
+      render();
+    }
+
+    function render() {
+      const tabs = [
+        ['all', 'すべて', data.items.length],
+        ['low', '残り少なめ', data.items.filter(i => i.low).length],
+        ...data.categories.map(c => [c, c, data.items.filter(i => i.category === c).length])
+      ];
+      $('#tabs').innerHTML = tabs.map(([k, label, n]) =>
+        `<button data-k="${esc(k)}" class="${filter === k ? 'on' : ''}">${esc(label)}（${n}）</button>`).join('');
+      $('#tabs').querySelectorAll('button').forEach(b => b.onclick = () => { filter = b.dataset.k; render(); });
+
+      let items = data.items;
+      if (filter === 'low') items = items.filter(i => i.low);
+      else if (filter !== 'all') items = items.filter(i => i.category === filter);
+
+      if (!items.length) {
+        $('#list').innerHTML = '<p class="empty">まだ項目がありません。</p>';
+        return;
+      }
+      $('#list').innerHTML = items.map(i => `
+        <div class="card">
+          ${i.low ? '<span class="badge">少なめ</span>' : ''}
+          ${i.photo ? `<img src="../${esc(i.photo)}" alt="${esc(i.name)}" loading="lazy">` : ''}
+          <h3>${esc(i.name)}</h3>
+          <div class="meta">
+            ${i.category ? `カテゴリ: ${esc(i.category)}<br>` : ''}
+            ${i.color ? `色・番号: ${esc(i.color)}<br>` : ''}
+            ${i.size ? `サイズ: ${esc(i.size)}<br>` : ''}
+            ${i.shop ? `購入先: ${esc(i.shop)}<br>` : ''}
+            ${i.note ? `メモ: ${esc(i.note)}` : ''}
+          </div>
+        </div>`).join('');
+    }
+
+    $('#form').addEventListener('submit', e => {
+      e.preventDefault();
+      const f = new FormData(e.target);
+      const item = {
+        id: Date.now().toString(36),
+        name: f.get('name').trim(),
+        category: f.get('category'),
+        color: f.get('color').trim(),
+        size: f.get('size').trim(),
+        shop: f.get('shop').trim(),
+        photo: f.get('photo').trim(),
+        note: f.get('note').trim(),
+        low: f.get('low') === 'on'
+      };
+      Object.keys(item).forEach(k => { if (item[k] === '' || item[k] === false) delete item[k]; });
+      $('#out').value = JSON.stringify(item, null, 2) + ',';
+      $('#result').hidden = false;
+    });
+
+    $('#copy').onclick = () => {
+      navigator.clipboard.writeText($('#out').value);
+      $('#copy').textContent = 'コピーしました';
+    };
+
+    load();
+  </script>
+</body>
+</html>
