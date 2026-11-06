@@ -10,13 +10,28 @@ const ND = (() => {
     return (await r.json()).map(norm);
   }
 
+  // 合言葉はリポジトリに書かず、このブラウザに一度入力して保存する
+  function getToken() {
+    let t = localStorage.getItem('nd_token');
+    if (!t) {
+      t = prompt('合言葉を入力してください（この端末に保存されます）');
+      if (!t) throw new Error('合言葉が入力されていません');
+      localStorage.setItem('nd_token', t.trim());
+    }
+    return localStorage.getItem('nd_token');
+  }
+
   async function send(action, body = {}) {
     const r = await fetch(cfg.API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ token: cfg.TOKEN, action, ...body })
+      body: JSON.stringify({ token: getToken(), action, ...body })
     });
     const j = await r.json();
+    if (j.error === 'unauthorized') {
+      localStorage.removeItem('nd_token');
+      throw new Error('合言葉が違います。もう一度操作すると入力し直せます');
+    }
     if (j.error) throw new Error(j.error);
     return j;
   }
