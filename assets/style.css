@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600&family=Zen+Kaku+Gothic+New:wght@300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@500;700&family=Zen+Kaku+Gothic+New:wght@300;400;500&display=swap');
 
 :root {
   --ink: #2a1c20;
@@ -8,7 +8,7 @@
   --bordeaux: #7a1f2b;
   --gold: #b08d57;
   --line: #e4d6d6;
-  --serif: 'Shippori Mincho', 'Hiragino Mincho ProN', 'Yu Mincho', serif;
+  --serif: 'Zen Old Mincho', 'Hiragino Mincho ProN', 'Yu Mincho', serif;
   --sans: 'Zen Kaku Gothic New', 'Hiragino Sans', 'Noto Sans JP', sans-serif;
 }
 
@@ -28,7 +28,7 @@ body {
 
 h1 {
   font-family: var(--serif);
-  font-weight: 400;
+  font-weight: 700;
   color: var(--bordeaux);
   font-size: clamp(1.7rem, 4vw, 2.2rem);
   letter-spacing: .06em;
@@ -49,7 +49,7 @@ h1::after {
 
 h2 {
   font-family: var(--serif);
-  font-weight: 600;
+  font-weight: 700;
   color: var(--bordeaux);
   font-size: 1.12rem;
   letter-spacing: .04em;
@@ -220,7 +220,7 @@ dialog button[type=submit]:hover { background: #5c1620; }
 .menu a strong, .menu a .title {
   display: block;
   font-family: var(--serif);
-  font-weight: 400;
+  font-weight: 700;
   font-size: 1.25rem;
   letter-spacing: .04em;
   color: var(--bordeaux);
