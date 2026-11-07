@@ -5,9 +5,27 @@ const ND = (() => {
   const configured = () => !!cfg.API_URL;
   const norm = r => ({ ...r, id: String(r.id), low: r.low === true || r.low === 'TRUE' });
 
-  async function list() {
-    const r = await fetch(cfg.API_URL, { cache: 'no-store' });
+  // sheet を省略すると「items」（持ち物）。'prompts' を指定すると指示プロンプト
+  async function list(sheet) {
+    const url = cfg.API_URL + (sheet ? '?sheet=' + encodeURIComponent(sheet) : '');
+    const r = await fetch(url, { cache: 'no-store' });
     return (await r.json()).map(norm);
+  }
+
+  // 文字列をクリップボードにコピー（非対応の端末でも動くように予備の方法を用意）
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch (e) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+    }
   }
 
   // 合言葉はリポジトリに書かず、このブラウザに一度入力して保存する
@@ -128,5 +146,5 @@ const ND = (() => {
     return res.url;
   }
 
-  return { cfg, configured, esc, categories, list, send, openEditor, designsOf, lightbox, uploadPhoto };
+  return { cfg, configured, esc, categories, list, send, openEditor, designsOf, lightbox, uploadPhoto, copyText };
 })();

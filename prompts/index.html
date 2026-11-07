@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>指示プロンプト</title>
+  <link rel="stylesheet" href="../assets/style.css">
+  <style>
+    .prompt pre { white-space: pre-wrap; word-break: break-word; font-family: inherit; font-size: .85rem; line-height: 1.6; background: #faf6f1; border-radius: 6px; padding: 10px; margin: 8px 0 0; max-height: 9em; overflow: hidden; position: relative; }
+    .prompt.open pre { max-height: none; }
+    .prompt h3 { margin: 0; font-size: 1rem; }
+    .prompt .actions { margin-top: 8px; }
+    .more { font-size: .8rem; color: #7a1f2b; background: none; border: 0; padding: 4px 0; }
+    .grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  </style>
+</head>
+<body>
+  <p><a href="../index.html">← ホームへ戻る</a></p>
+  <h1>指示プロンプト</h1>
+  <p class="note">AIにデザインを考えさせるときの指示文を保存しておけます。「全文コピー」で、そのまま貼り付けられます。</p>
+  <p><button id="add">＋ プロンプトを追加</button></p>
+
+  <div class="grid" id="list"></div>
+  <p id="msg" class="note"></p>
+
+  <script src="../assets/config.js"></script>
+  <script src="../assets/app.js"></script>
+  <script>
+    const $ = s => document.querySelector(s);
+    let prompts = [];
+
+    async function reload() {
+      if (!ND.configured()) {
+        $('#msg').textContent = 'まだ設定されていません（assets/config.js にURLを入れてください）。';
+        return;
+      }
+      try {
+        prompts = await ND.list('prompts');
+        render();
+      } catch (e) {
+        $('#msg').textContent = '読み込みに失敗しました: ' + e.message;
+      }
+    }
+
+    function render() {
+      $('#list').innerHTML = prompts.length
+        ? prompts.map(p => `
+            <div class="card prompt" data-id="${ND.esc(p.id)}">
+              <h3>${ND.esc(p.title || '（無題）')}</h3>
+              <pre>${ND.esc(p.body)}</pre>
+              <button class="more" data-act="more">▼ 全文を表示</button>
+              <div class="actions">
+                <button data-act="copy">全文コピー</button>
+                <button data-act="edit">編集</button>
+                <button data-act="delete">削除</button>
+              </div>
+            </div>`).join('')
+        : '<p class="empty">まだプロンプトがありません。「＋ プロンプトを追加」から登録できます。</p>';
+    }
+
+    // 全文コピー・全文表示・編集・削除
+    $('#list').addEventListener('click', async e => {
+      const b = e.target.closest('button[data-act]');
+      if (!b) return;
+      const card = b.closest('.prompt');
+      const p = prompts.find(x => x.id === card.dataset.id);
+      if (!p) return;
+
+      if (b.dataset.act === 'more') {
+        const open = card.classList.toggle('open');
+        b.textContent = open ? '▲ 折りたたむ' : '▼ 全文を表示';
+        return;
+      }
+      if (b.dataset.act === 'copy') {
+        await ND.copyText(p.body);
+        b.textContent = 'コピーしました';
+        setTimeout(() => { b.textContent = '全文コピー'; }, 1500);
+        return;
+      }
+      if (b.dataset.act === 'edit') {
+        return openForm(p);
+      }
+      if (b.dataset.act === 'delete') {
+        if (!confirm(`「${p.title || '（無題）'}」を削除しますか？`)) return;
+        try {
+          await ND.send('deletePrompt', { id: p.id });
+          await reload();
+        } catch (err) {
+          alert('削除できませんでした: ' + err.message);
+        }
+      }
+    });
+
+    // 追加・編集フォーム（タイトルと本文）
+    function openForm(p) {
+      document.querySelector('#pr-dlg')?.remove();
+      const dlg = document.createElement('dialog');
+      dlg.id = 'pr-dlg';
+      dlg.innerHTML = `
+        <form id="pr-form" style="width:min(92vw,560px)">
+          <h3 style="color:#7a1f2b;margin:0 0 4px">${p ? '編集' : '追加'}</h3>
+          <label style="display:block;font-size:.85rem;margin-top:10px">タイトル
+            <input name="title" required value="${ND.esc(p?.title || '')}" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #d6c5bd;border-radius:6px;font:inherit;margin-top:4px">
+          </label>
+          <label style="display:block;font-size:.85rem;margin-top:10px">プロンプト本文
+            <textarea name="body" required rows="12" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #d6c5bd;border-radius:6px;font:inherit;margin-top:4px">${ND.esc(p?.body || '')}</textarea>
+          </label>
+          <div class="btns" style="text-align:right;margin-top:14px">
+            <button type="button" id="pr-cancel">キャンセル</button>
+            <button type="submit" style="background:#7a1f2b;color:#fff;border-color:#7a1f2b">保存</button>
+          </div>
+        </form>`;
+      document.body.appendChild(dlg);
+      dlg.querySelector('#pr-cancel').onclick = () => dlg.close();
+      dlg.querySelector('#pr-form').onsubmit = async e => {
+        e.preventDefault();
+        const f = Object.fromEntries(new FormData(e.target));
+        const fields = { title: f.title.trim(), body: f.body.trim() };
+        try {
+          if (p) await ND.send('updatePrompt', { id: p.id, ...fields });
+          else await ND.send('addPrompt', fields);
+          dlg.close();
+          await reload();
+        } catch (err) {
+          alert('保存できませんでした: ' + err.message);
+        }
+      };
+      dlg.showModal();
+    }
+
+    $('#add').onclick = () => openForm(null);
+
+    reload();
+  </script>
+</body>
+</html>

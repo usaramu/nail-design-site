@@ -1,12 +1,18 @@
 // Google Apps Script（ウェブアプリ）
-// スプレッドシートの「items」シートを読み書きする小さなAPIです。
+// スプレッドシートの「items」「prompts」シートを読み書きする小さなAPIです。
 // 設定: 下の TOKEN を自分で決めた合言葉に変えてください。
 
 const TOKEN = 'ここを自分の合言葉に変更';
 const SHEET_NAME = 'items';
 
-function sheet_() {
-  return SpreadsheetApp.getActive().getSheetByName(SHEET_NAME);
+function sheetByName_(name) {
+  const ss = SpreadsheetApp.getActive();
+  let sh = ss.getSheetByName(name);
+  if (!sh && name === 'prompts') {
+    sh = ss.insertSheet('prompts');
+    sh.appendRow(['id', 'title', 'body']);
+  }
+  return sh;
 }
 
 function out_(obj) {
@@ -14,24 +20,57 @@ function out_(obj) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-// 全件取得（サイトから読み込むとき）
-function doGet() {
-  const values = sheet_().getDataRange().getValues();
+function readRows_(sh) {
+  const values = sh.getDataRange().getValues();
   const headers = values.shift();
-  const items = values
+  return values
     .filter(r => r[0] !== '')
     .map(r => {
       const o = {};
       headers.forEach((h, i) => o[h] = r[i]);
       return o;
     });
-  return out_(items);
+}
+
+// 全件取得（サイトから読み込むとき）。?sheet=prompts で指示プロンプトを取得
+function doGet(e) {
+  const name = (e && e.parameter && e.parameter.sheet) || SHEET_NAME;
+  return out_(readRows_(sheetByName_(name)));
+}
+
+// 指示プロンプトの追加・編集・削除
+function promptAction_(req) {
+  const sh = sheetByName_('prompts');
+  const values = sh.getDataRange().getValues();
+
+  if (req.action === 'addPrompt') {
+    const id = 'p' + Utilities.getUuid().slice(0, 8);
+    sh.appendRow([id, req.title || '', req.body || '']);
+    return out_({ ok: true, id: id });
+  }
+
+  const rowIndex = values.findIndex((r, i) => i > 0 && String(r[0]) === String(req.id));
+  if (rowIndex < 1) return out_({ error: 'not found' });
+
+  if (req.action === 'deletePrompt') {
+    sh.deleteRow(rowIndex + 1);
+    return out_({ ok: true });
+  }
+  if (req.action === 'updatePrompt') {
+    sh.getRange(rowIndex + 1, 2, 1, 2).setValues([[req.title || '', req.body || '']]);
+    return out_({ ok: true });
+  }
+  return out_({ error: 'unknown action' });
 }
 
 // 変更・追加（サイトから操作するとき）
 function doPost(e) {
   const req = JSON.parse(e.postData.contents);
   if (req.token !== TOKEN) return out_({ error: 'unauthorized' });
+
+  if (['addPrompt', 'updatePrompt', 'deletePrompt'].includes(req.action)) {
+    return promptAction_(req);
+  }
 
   // 写真のアップロード（軽くした画像を受け取り、Googleドライブに保存して表示用URLを返す）
   if (req.action === 'upload') {
@@ -43,7 +82,7 @@ function doPost(e) {
     return out_({ ok: true, url: 'https://lh3.googleusercontent.com/d/' + file.getId() });
   }
 
-  const sh = sheet_();
+  const sh = sheetByName_(SHEET_NAME);
   const values = sh.getDataRange().getValues();
   const headers = values[0];
   const idCol = headers.indexOf('id');
