@@ -25,7 +25,6 @@
 <body>
   <p><a href="../index.html">← 一覧へ戻る</a> ／ <a href="shopping.html">購入リストへ</a> ／ <a href="../designs/index.html">デザイン一覧</a></p>
   <h1>持ち物リスト</h1>
-  <p class="note">どの端末からも同じ内容が見られます。</p>
 
   <div class="tabs" id="tabs"></div>
   <p><button id="add">＋ 持ち物を追加</button></p>
@@ -41,7 +40,7 @@
 
     async function reload() {
       if (!ND.configured()) {
-        $('#msg').textContent = 'まだ設定されていません（assets/config.js にURLと合言葉を入れてください）。';
+        $('#msg').textContent = 'まだ設定されていません。';
         return;
       }
       try {
@@ -68,7 +67,7 @@
 
       $('#list').innerHTML = view.length
         ? view.map(card).join('')
-        : '<p class="empty">まだ項目がありません。</p>';
+        : '<p class="empty">まだありません。</p>';
     }
 
     const photoSrc = p => /^https?:/.test(p) ? p : '../' + p;

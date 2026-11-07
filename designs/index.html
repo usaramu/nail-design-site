@@ -27,7 +27,6 @@
 <body>
   <p><a href="../index.html">← ホームへ戻る</a></p>
   <h1>デザイン一覧</h1>
-  <p class="note">デザインを開くと、指示画像と必要な持ち物（持っている数・足りないもの・残り少なめ）を確認できます。</p>
 
   <div id="list"></div>
 
@@ -45,8 +44,7 @@
       <div id="pick" class="meta"></div>
 
       <h3 style="font-size:.95rem;margin:14px 0 4px">新しく買うもの（1行に1つ）</h3>
-      <p class="note" style="margin:0 0 6px">書式: 名前 | カテゴリ | 色・番号 | サイズ | 購入先<br>（カテゴリは「ジェル・ツール・パーツ・基本用品」のどれか。省略時は基本用品）</p>
-      <textarea id="nnew" rows="6" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #d6c5bd;border-radius:6px;font:inherit" placeholder="ピンクパール | パーツ | ピンク | 約2mm | 未確定"></textarea>
+      <textarea id="nnew" rows="6" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #d6c5bd;border-radius:6px;font:inherit" placeholder="名前 | カテゴリ | 色・番号 | サイズ | 購入先"></textarea>
 
       <div style="text-align:right;margin-top:14px">
         <button type="submit" id="save" style="background:#7a1f2b;color:#fff;border-color:#7a1f2b">保存して購入リストに反映</button>
@@ -68,7 +66,6 @@
       harvard: {
         name: 'Harvard Law Chic（SET02）',
         page: 'harvard-law-chic/index.html',
-        note: '右手・左手の制作ガイドと新規購入品リスト',
         defaults: {
           STEP2A: 'harvard-law-chic/images/right-hand-step2a.png',
           STEP2B: 'harvard-law-chic/images/left-hand-step2b.png'
@@ -84,7 +81,7 @@
 
     async function reload() {
       if (!ND.configured()) {
-        $('#msg').textContent = 'まだ設定されていません（assets/config.js にURLを入れてください）。';
+        $('#msg').textContent = 'まだ設定されていません。';
         return;
       }
       try {
@@ -108,7 +105,7 @@
     function render() {
       const keys = [...new Set(items.flatMap(ND.designsOf))];
       if (!keys.length) {
-        $('#list').innerHTML = '<p class="done">まだデザインがありません。下の「＋ 新しいデザインを追加」から登録できます。</p>';
+        $('#list').innerHTML = '<p class="done">まだありません。</p>';
         return;
       }
       $('#list').innerHTML = keys.map(key => {
@@ -136,7 +133,6 @@
           <details class="design">
             <summary>${ND.esc(d.name)}</summary>
             <div class="design-body">
-              ${d.note ? `<p class="note" style="margin:0 0 4px">${ND.esc(d.note)}</p>` : ''}
               ${d.page ? `<p class="guide-link"><a href="${d.page}">制作ガイドを開く</a></p>` : ''}
 
               <h3>指示画像</h3>
@@ -160,7 +156,7 @@
               <span>${ND.esc(i.name)}${i.color ? '（' + ND.esc(i.color) + '）' : ''}
                 <small>［${i.status === '持ち物' ? '持ち物' : '購入リスト'}］</small></span>
             </label>`).join('')
-        : '<p class="empty">項目がまだありません。</p>';
+        : '<p class="empty">まだありません。</p>';
     }
 
     // 「写真を入れる」ボタンで、対応する入力欄を開く
@@ -219,8 +215,7 @@
           } });
         }
         $('#newform').reset();
-        $('#msg').textContent = `「${key}」を追加しました。購入リストにも反映されています。` +
-          `（表示名を付けるには、このページの DESIGNS に「${key}」を追加してください）`;
+        $('#msg').textContent = `「${key}」を追加しました。`;
         await reload();
       } catch (err) {
         alert('追加できませんでした: ' + err.message);

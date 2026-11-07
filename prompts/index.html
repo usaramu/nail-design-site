@@ -17,7 +17,6 @@
 <body>
   <p><a href="../index.html">← ホームへ戻る</a></p>
   <h1>指示プロンプト</h1>
-  <p class="note">AIにデザインを考えさせるときの指示文を保存しておけます。「全文コピー」で、そのまま貼り付けられます。</p>
   <p><button id="add">＋ プロンプトを追加</button></p>
 
   <div class="grid" id="list"></div>
@@ -31,7 +30,7 @@
 
     async function reload() {
       if (!ND.configured()) {
-        $('#msg').textContent = 'まだ設定されていません（assets/config.js にURLを入れてください）。';
+        $('#msg').textContent = 'まだ設定されていません。';
         return;
       }
       try {
@@ -55,7 +54,7 @@
                 <button data-act="delete">削除</button>
               </div>
             </div>`).join('')
-        : '<p class="empty">まだプロンプトがありません。「＋ プロンプトを追加」から登録できます。</p>';
+        : '<p class="empty">まだありません。</p>';
     }
 
     // 全文コピー・全文表示・編集・削除

@@ -32,7 +32,7 @@ const ND = (() => {
   function getToken() {
     let t = localStorage.getItem('nd_token');
     if (!t) {
-      t = prompt('合言葉を入力してください（この端末に保存されます）');
+      t = prompt('合言葉を入力してください');
       if (!t) throw new Error('合言葉が入力されていません');
       localStorage.setItem('nd_token', t.trim());
     }
@@ -69,10 +69,10 @@ const ND = (() => {
         <label>サイズ・容量<input name="size" value="${esc(v.size)}"></label>
         <label>購入先<input name="shop" value="${esc(v.shop)}"></label>
         <label>メモ<input name="note" value="${esc(v.note)}"></label>
-        <label>写真（任意・保存前に自動で軽くします）<input type="file" id="nd-file" accept="image/*"></label>
+        <label>写真（任意）<input type="file" id="nd-file" accept="image/*"></label>
         <p class="note" id="nd-status" style="margin:4px 0 0"></p>
         <input type="hidden" name="photo" value="${esc(v.photo)}">
-        <label>使うデザイン（任意・複数はカンマ区切り）<input name="designs" value="${esc(v.designs)}" placeholder="harvard"></label>
+        <label>使うデザイン<input name="designs" value="${esc(v.designs)}" placeholder="harvard"></label>
         <div class="btns"><button type="button" id="nd-cancel">キャンセル</button> <button type="submit">保存</button></div>
       </form>`;
     document.body.appendChild(dlg);
