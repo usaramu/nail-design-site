@@ -5,11 +5,29 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>デザイン一覧</title>
   <link rel="stylesheet" href="../assets/style.css">
+  <style>
+    .design { border-top: 1px solid var(--line); padding: 14px 0 0; margin-bottom: 8px; }
+    .design > summary {
+      cursor: pointer; list-style: none; font-family: var(--serif); font-size: 1.12rem;
+      color: var(--bordeaux); letter-spacing: .03em; padding: 4px 0 10px;
+    }
+    .design > summary::-webkit-details-marker { display: none; }
+    .design > summary::after { content: '＋'; float: right; color: var(--muted); font-family: var(--sans); }
+    .design[open] > summary::after { content: '－'; }
+    .design-body { padding: 4px 0 18px; }
+    .design-body h3 { font-family: var(--serif); font-weight: 600; font-size: .98rem; margin: 22px 0 8px; color: var(--ink); }
+    .steps { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; }
+    .step img { width: 100%; height: auto; display: block; border: 1px solid var(--line); background: var(--surface); }
+    .step .empty-img { border: 1px dashed var(--line); padding: 36px 0; text-align: center; color: var(--muted); font-size: .85rem; }
+    .step figcaption { font-size: .8rem; color: var(--muted); margin: 8px 0 6px; }
+    .step input[type=file] { display: none; }
+    .guide-link { font-size: .85rem; }
+  </style>
 </head>
 <body>
   <p><a href="../index.html">← ホームへ戻る</a></p>
   <h1>デザイン一覧</h1>
-  <p class="note">デザインごとに、制作ガイドと必要な持ち物（持っている数・足りないもの・残り少なめ）を確認できます。</p>
+  <p class="note">デザインを開くと、指示画像と必要な持ち物（持っている数・足りないもの・残り少なめ）を確認できます。</p>
 
   <div id="list"></div>
 
@@ -43,11 +61,26 @@
   <script>
     const $ = s => document.querySelector(s);
     let items = [];
+    let images = []; // 差し替えた指示画像（シート designimages）
 
-    // デザインキー → 表示名とガイドページ（ガイドを作ったら page を書く）
+    // デザインキー → 表示名・ガイドページ・既定の指示画像
     const DESIGNS = {
-      harvard: { name: 'Harvard Law Chic（SET02）', page: 'harvard-law-chic/index.html', note: '右手・左手の制作ガイドと新規購入品リスト' }
+      harvard: {
+        name: 'Harvard Law Chic（SET02）',
+        page: 'harvard-law-chic/index.html',
+        note: '右手・左手の制作ガイドと新規購入品リスト',
+        defaults: {
+          STEP2A: 'harvard-law-chic/images/right-hand-step2a.png',
+          STEP2B: 'harvard-law-chic/images/left-hand-step2b.png'
+        }
+      }
     };
+
+    // 指示画像の枠（どのデザインでも2枚）
+    const SLOTS = [
+      { slot: 'STEP2A', label: 'STEP 2A（右手）' },
+      { slot: 'STEP2B', label: 'STEP 2B（左手）' }
+    ];
 
     async function reload() {
       if (!ND.configured()) {
@@ -56,11 +89,20 @@
       }
       try {
         items = await ND.list();
+        try { images = await ND.list('designimages'); } catch (e) { images = []; }
         render();
         renderPick();
       } catch (e) {
         $('#msg').textContent = '読み込みに失敗しました: ' + e.message;
       }
+    }
+
+    // 枠ごとの画像URL：差し替えたもの → 既定の画像 の順
+    function imageFor(key, slot) {
+      const hit = images.find(x => x.design === key && x.slot === slot);
+      if (hit && hit.url) return hit.url;
+      const d = DESIGNS[key];
+      return d && d.defaults && d.defaults[slot] ? d.defaults[slot] : '';
     }
 
     function render() {
@@ -70,7 +112,7 @@
         return;
       }
       $('#list').innerHTML = keys.map(key => {
-        const d = DESIGNS[key] || { name: key, page: null };
+        const d = DESIGNS[key] || { name: key };
         const need = items.filter(i => ND.designsOf(i).includes(key));
         const have = need.filter(i => i.status === '持ち物');
         const missing = need.filter(i => i.status === '購入リスト');
@@ -78,16 +120,35 @@
         const line = list => list.length
           ? list.map(i => `<li>${ND.esc(i.name)}${i.color ? '（' + ND.esc(i.color) + '）' : ''}</li>`).join('')
           : '<li>なし</li>';
+        const steps = SLOTS.map(s => {
+          const src = imageFor(key, s.slot);
+          return `
+            <figure class="step" style="margin:0">
+              ${src
+                ? `<img class="zoom" src="${ND.esc(/^https?:/.test(src) ? src : '../' + src)}" alt="${ND.esc(s.label)}">`
+                : `<div class="empty-img">写真を入れてください</div>`}
+              <figcaption>${ND.esc(s.label)}</figcaption>
+              <button type="button" data-act="pick" data-design="${ND.esc(key)}" data-slot="${s.slot}">写真を入れる・差し替える</button>
+              <input type="file" accept="image/*" data-design="${ND.esc(key)}" data-slot="${s.slot}">
+            </figure>`;
+        }).join('');
         return `
-          <section class="card" style="margin-bottom:16px">
-            <h2 style="border:0;margin:0 0 6px;font-size:1.05rem">${d.page ? `<a href="${d.page}">${ND.esc(d.name)}</a>` : ND.esc(d.name)}</h2>
-            ${d.note ? `<p class="note" style="margin:0 0 8px">${ND.esc(d.note)}</p>` : ''}
-            <p class="meta">持っている ${have.length} / ${need.length}</p>
-            <h3 style="font-size:.95rem;margin:12px 0 4px">足りない（購入リスト）</h3>
-            <ul class="meta">${line(missing)}</ul>
-            <h3 style="font-size:.95rem;margin:12px 0 4px">残り少なめ</h3>
-            <ul class="meta">${line(low)}</ul>
-          </section>`;
+          <details class="design">
+            <summary>${ND.esc(d.name)}</summary>
+            <div class="design-body">
+              ${d.note ? `<p class="note" style="margin:0 0 4px">${ND.esc(d.note)}</p>` : ''}
+              ${d.page ? `<p class="guide-link"><a href="${d.page}">制作ガイドを開く</a></p>` : ''}
+
+              <h3>指示画像</h3>
+              <div class="steps">${steps}</div>
+
+              <h3>持っている ${have.length} / ${need.length}</h3>
+              <h3>足りない（購入リスト）</h3>
+              <ul class="meta">${line(missing)}</ul>
+              <h3>残り少なめ</h3>
+              <ul class="meta">${line(low)}</ul>
+            </div>
+          </details>`;
       }).join('');
     }
 
@@ -101,6 +162,32 @@
             </label>`).join('')
         : '<p class="empty">項目がまだありません。</p>';
     }
+
+    // 「写真を入れる」ボタンで、対応する入力欄を開く
+    $('#list').addEventListener('click', e => {
+      const b = e.target.closest('button[data-act="pick"]');
+      if (!b) return;
+      const input = b.parentElement.querySelector('input[type=file]');
+      input.click();
+    });
+
+    // 写真を選んだら、軽くしてドライブに保存し、枠に登録する
+    $('#list').addEventListener('change', async e => {
+      const input = e.target;
+      if (input.type !== 'file') return;
+      const file = input.files[0];
+      if (!file) return;
+      $('#msg').textContent = '写真を軽くして保存しています…';
+      try {
+        const url = await ND.uploadPhoto(file);
+        await ND.send('setDesignImage', { design: input.dataset.design, slot: input.dataset.slot, url });
+        $('#msg').textContent = '指示画像を入れ替えました。';
+        await reload();
+      } catch (err) {
+        $('#msg').textContent = '保存できませんでした: ' + err.message;
+      }
+      input.value = '';
+    });
 
     $('#newform').addEventListener('submit', async e => {
       e.preventDefault();

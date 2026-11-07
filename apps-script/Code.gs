@@ -12,7 +12,24 @@ function sheetByName_(name) {
     sh = ss.insertSheet('prompts');
     sh.appendRow(['id', 'title', 'body']);
   }
+  if (!sh && name === 'designimages') {
+    sh = ss.insertSheet('designimages');
+    sh.appendRow(['id', 'design', 'slot', 'url']);
+  }
   return sh;
+}
+
+// デザインの指示画像（STEP2A・STEP2B など）の差し替え。同じデザイン・同じ枠なら上書き
+function designImageAction_(req) {
+  const sh = sheetByName_('designimages');
+  const values = sh.getDataRange().getValues();
+  const rowIndex = values.findIndex((r, i) => i > 0 && r[1] === req.design && r[2] === req.slot);
+  if (rowIndex > 0) {
+    sh.getRange(rowIndex + 1, 4).setValue(req.url);
+  } else {
+    sh.appendRow(['d' + Utilities.getUuid().slice(0, 8), req.design, req.slot, req.url]);
+  }
+  return out_({ ok: true });
 }
 
 function out_(obj) {
@@ -70,6 +87,9 @@ function doPost(e) {
 
   if (['addPrompt', 'updatePrompt', 'deletePrompt'].includes(req.action)) {
     return promptAction_(req);
+  }
+  if (req.action === 'setDesignImage') {
+    return designImageAction_(req);
   }
 
   // 写真のアップロード（軽くした画像を受け取り、Googleドライブに保存して表示用URLを返す）
