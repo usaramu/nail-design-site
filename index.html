@@ -5,46 +5,40 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ネイル帳</title>
   <link rel="stylesheet" href="assets/style.css">
-  <style>
-    .menu { list-style: none; padding: 0; display: grid; gap: 12px; }
-    .menu a { display: block; background: #fff; border: 1px solid #e8d9d2; border-radius: 10px; padding: 16px; color: #7a1f2b; text-decoration: none; font-weight: bold; font-size: 1.05rem; }
-    .menu a span { display: block; font-weight: normal; font-size: .85rem; color: #7a6a6a; margin-top: 4px; }
-    .lowbox { background: #fff8f6; border: 1px solid #c0392b; border-radius: 10px; padding: 16px; margin-top: 24px; }
-  </style>
 </head>
 <body>
   <h1>ネイル帳</h1>
   <ul class="menu">
     <li>
       <a href="designs/index.html">
-        デザイン一覧
+        <span class="title">デザイン一覧</span>
         <span>制作ガイド・必要な持ち物・足りないものを確認</span>
       </a>
     </li>
     <li>
       <a href="tools/index.html">
-        持ち物リスト
+        <span class="title">持ち物リスト</span>
         <span>ジェル・ツール・パーツの所持状況（カテゴリ別・残り少なめ）</span>
       </a>
     </li>
     <li>
       <a href="tools/shopping.html">
-        購入リスト
+        <span class="title">購入リスト</span>
         <span>チェックを付けると持ち物リストに移動します</span>
       </a>
     </li>
     <li>
       <a href="prompts/index.html">
-        指示プロンプト
+        <span class="title">指示プロンプト</span>
         <span>AIに考えさせるときの指示文を保存・全文コピー</span>
       </a>
     </li>
   </ul>
 
   <div id="lowbox" class="lowbox" hidden>
-    <h2 style="font-size:1rem;color:#7a1f2b;margin:0 0 8px">残り少なめ（補充が必要）</h2>
-    <ul id="lowlist" style="padding-left:18px;margin:0;font-size:.9rem;line-height:1.8"></ul>
-    <p style="margin:8px 0 0"><a href="tools/shopping.html">購入リストで補充する →</a></p>
+    <h2>残り少なめ（補充が必要）</h2>
+    <ul id="lowlist"></ul>
+    <p style="margin:10px 0 0"><a href="tools/shopping.html">購入リストで補充する</a></p>
   </div>
 
   <script src="assets/config.js"></script>

@@ -1,31 +1,262 @@
-body { font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; background: #faf6f1; color: #3a2a2a; margin: 0 auto; padding: 24px 16px; max-width: 900px; }
-h1 { color: #7a1f2b; font-size: 1.4rem; margin: 0 0 8px; }
-h2 { color: #7a1f2b; font-size: 1.05rem; margin: 24px 0 8px; border-bottom: 1px solid #e8d9d2; padding-bottom: 4px; }
-a { color: #7a1f2b; }
-.note { font-size: .85rem; color: #7a6a6a; line-height: 1.7; }
-button { font: inherit; font-size: .85rem; border: 1px solid #c9a9a2; background: #fff; color: #7a1f2b; border-radius: 6px; padding: 6px 12px; cursor: pointer; }
-.tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
-.tabs button { border-radius: 999px; color: #3a2a2a; }
-.tabs button.on { background: #7a1f2b; color: #fff; border-color: #7a1f2b; }
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
-.card, .row { background: #fff; border: 1px solid #e8d9d2; border-radius: 10px; padding: 12px; position: relative; }
-.row { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; }
+@import url('https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600&family=Zen+Kaku+Gothic+New:wght@300;400;500&display=swap');
+
+:root {
+  --ink: #2a1c20;
+  --muted: #7d6b70;
+  --paper: #f7f2f1;
+  --surface: #ffffff;
+  --bordeaux: #7a1f2b;
+  --gold: #b08d57;
+  --line: #e4d6d6;
+  --serif: 'Shippori Mincho', 'Hiragino Mincho ProN', 'Yu Mincho', serif;
+  --sans: 'Zen Kaku Gothic New', 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: var(--sans);
+  font-weight: 300;
+  font-size: 15.5px;
+  line-height: 1.85;
+  color: var(--ink);
+  background: var(--paper);
+  margin: 0 auto;
+  padding: 32px 20px 56px;
+  max-width: 880px;
+}
+
+h1 {
+  font-family: var(--serif);
+  font-weight: 400;
+  color: var(--bordeaux);
+  font-size: clamp(1.7rem, 4vw, 2.2rem);
+  letter-spacing: .06em;
+  line-height: 1.4;
+  margin: 8px 0 24px;
+  padding-bottom: 18px;
+  position: relative;
+}
+h1::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 56px;
+  height: 1px;
+  background: var(--gold);
+}
+
+h2 {
+  font-family: var(--serif);
+  font-weight: 600;
+  color: var(--bordeaux);
+  font-size: 1.12rem;
+  letter-spacing: .04em;
+  margin: 36px 0 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+a {
+  color: var(--bordeaux);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color .2s;
+}
+a:hover { border-bottom-color: var(--gold); }
+
+:focus-visible { outline: 1px solid var(--gold); outline-offset: 3px; }
+
+.note {
+  font-size: .85rem;
+  color: var(--muted);
+  line-height: 1.9;
+  margin: 0 0 16px;
+}
+
+button {
+  font-family: var(--sans);
+  font-weight: 400;
+  font-size: .82rem;
+  letter-spacing: .02em;
+  color: var(--bordeaux);
+  background: transparent;
+  border: 1px solid var(--bordeaux);
+  border-radius: 2px;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: background .2s, color .2s;
+}
+button:hover { background: var(--bordeaux); color: #fff; }
+button:disabled { opacity: .45; cursor: default; }
+button:disabled:hover { background: transparent; color: var(--bordeaux); }
+
+/* タブ（文字のみ、選択中に金の下線） */
+.tabs { display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 20px 0 8px; border-bottom: 1px solid var(--line); }
+.tabs button {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  padding: 8px 0 10px;
+  margin-bottom: -1px;
+  border-bottom: 1px solid transparent;
+}
+.tabs button:hover { background: transparent; color: var(--ink); }
+.tabs button.on { color: var(--bordeaux); border-bottom-color: var(--gold); }
+
+/* 写真つきの一覧（罫線で区切る） */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 28px 24px; margin-top: 8px; }
+
+.card, .row, .prompt {
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--line);
+  padding: 16px 0 0;
+  position: relative;
+}
+.row { display: flex; gap: 14px; align-items: center; padding: 14px 0; }
 .row span { flex: 1; }
-.row small { display: block; color: #7a6a6a; font-size: .8rem; line-height: 1.5; }
-.row input[type=checkbox] { width: 18px; height: 18px; flex-shrink: 0; }
-.card img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 6px; margin-bottom: 8px; }
-.card h3 { font-size: 1rem; margin: 0 0 6px; }
-.meta { font-size: .85rem; color: #6a5a5a; line-height: 1.6; }
-.badge { position: absolute; top: 10px; right: 10px; background: #c0392b; color: #fff; font-size: .75rem; padding: 2px 8px; border-radius: 999px; }
-.actions { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
-.actions button { font-size: .8rem; padding: 4px 10px; }
-.empty, .done { color: #8a7a7a; font-size: .9rem; }
-dialog { border: 1px solid #e8d9d2; border-radius: 12px; width: min(92vw, 420px); padding: 16px; }
-dialog h3 { color: #7a1f2b; margin: 0 0 4px; }
-dialog label { display: block; font-size: .85rem; margin-top: 10px; }
-dialog input, dialog select { width: 100%; box-sizing: border-box; padding: 8px; border: 1px solid #d6c5bd; border-radius: 6px; font: inherit; margin-top: 4px; }
-dialog button[type=submit] { background: #7a1f2b; color: #fff; border-color: #7a1f2b; }
-.btns { text-align: right; margin-top: 16px; }
-.badge-inline { display: inline-block; background: #c0392b; color: #fff; font-size: .7rem; padding: 1px 6px; border-radius: 999px; margin-left: 4px; vertical-align: middle; }
-.lowrow { border-color: #c0392b; background: #fff8f6; }
+.row small { display: block; color: var(--muted); font-size: .8rem; line-height: 1.7; }
+.row input[type=checkbox] { width: 16px; height: 16px; flex-shrink: 0; accent-color: var(--bordeaux); }
+
+.card img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 0;
+  border: 1px solid var(--line);
+  margin-bottom: 12px;
+  display: block;
+}
+.card h3 {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 1.02rem;
+  letter-spacing: .03em;
+  margin: 0 0 6px;
+}
 .card img.zoom { cursor: zoom-in; }
+
+.meta { font-size: .84rem; color: var(--muted); line-height: 1.85; }
+
+/* 少なめ：バッジではなく、文字と細い枠で控えめに */
+.badge {
+  position: absolute;
+  top: 16px;
+  right: 0;
+  font-size: .72rem;
+  color: var(--bordeaux);
+  border: 1px solid var(--bordeaux);
+  padding: 1px 8px;
+  background: var(--paper);
+}
+.badge-inline {
+  font-size: .72rem;
+  color: var(--bordeaux);
+  border: 1px solid var(--bordeaux);
+  padding: 0 6px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.lowrow { border-left: 2px solid var(--bordeaux); padding-left: 14px; }
+
+.actions { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px; }
+.actions button { font-size: .78rem; padding: 5px 11px; }
+
+.empty, .done { color: var(--muted); font-size: .9rem; padding: 24px 0; }
+
+/* ダイアログ（追加・編集） */
+dialog {
+  border: 1px solid var(--gold);
+  border-radius: 2px;
+  background: var(--paper);
+  color: var(--ink);
+  width: min(92vw, 440px);
+  padding: 22px 22px 18px;
+  box-shadow: none;
+}
+dialog::backdrop { background: rgba(42, 28, 32, .35); }
+dialog h3 {
+  font-family: var(--serif);
+  font-weight: 600;
+  color: var(--bordeaux);
+  font-size: 1.1rem;
+  margin: 0 0 6px;
+}
+dialog label { display: block; font-size: .83rem; color: var(--muted); margin-top: 14px; }
+dialog input, dialog select, dialog textarea, form input, form select, form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: var(--surface);
+  font: inherit;
+  color: var(--ink);
+  margin-top: 5px;
+}
+dialog input:focus, dialog select:focus, dialog textarea:focus, form input:focus, form textarea:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+dialog button[type=submit] { background: var(--bordeaux); color: #fff; }
+dialog button[type=submit]:hover { background: #5c1620; }
+.btns { text-align: right; margin-top: 18px; }
+.btns button { margin-left: 6px; }
+
+/* ホームのメニュー：ノートの目次のように罫線で並べる */
+.menu { list-style: none; padding: 0; margin: 8px 0 0; }
+.menu li { border-top: 1px solid var(--line); }
+.menu li:last-child { border-bottom: 1px solid var(--line); }
+.menu a {
+  display: block;
+  padding: 18px 0;
+  color: var(--ink);
+  border-bottom: 0;
+}
+.menu a:hover { color: var(--bordeaux); }
+.menu a strong, .menu a .title {
+  display: block;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 1.25rem;
+  letter-spacing: .04em;
+  color: var(--bordeaux);
+}
+.menu a span { display: block; font-size: .83rem; color: var(--muted); margin-top: 2px; }
+
+.lowbox { margin-top: 36px; padding: 0 0 0 16px; border-left: 2px solid var(--bordeaux); }
+.lowbox h2 { border: 0; padding: 0; margin: 0 0 8px; font-size: 1rem; }
+.lowbox ul { margin: 0; padding-left: 18px; font-size: .9rem; line-height: 1.9; }
+
+/* 指示プロンプト */
+.prompt pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--sans);
+  font-weight: 300;
+  font-size: .86rem;
+  line-height: 1.85;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 14px 16px;
+  margin: 10px 0 0;
+  max-height: 9.5em;
+  overflow: hidden;
+}
+.prompt.open pre { max-height: none; }
+.prompt h3 { font-family: var(--serif); font-weight: 600; font-size: 1.02rem; margin: 0; letter-spacing: .03em; }
+.prompt .actions { margin-top: 10px; }
+.more { font-size: .78rem; color: var(--muted); border: 0; padding: 4px 0; background: transparent; }
+.more:hover { background: transparent; color: var(--bordeaux); }
+.prompt .grid, #list.prompts { display: block; }
+
+/* 画像の拡大（ライトボックス） */
+#nd-lb { border: 0; background: transparent; box-shadow: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
