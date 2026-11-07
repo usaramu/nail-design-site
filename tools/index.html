@@ -5,6 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>持ち物リスト</title>
   <link rel="stylesheet" href="../assets/style.css">
+  <style>
+    /* ジェルの色見本（名前の右横の丸） */
+    .swatchrow { display: flex; align-items: center; gap: 14px; }
+    .swatchrow h3 { flex: 1; margin: 0; }
+    .swatch {
+      width: 56px; height: 56px; flex-shrink: 0;
+      border-radius: 50%; padding: 0; overflow: hidden;
+      border: 1px dashed var(--gold); background: var(--surface);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--muted);
+    }
+    .swatch:hover { background: var(--surface); color: var(--bordeaux); }
+    .swatch img { width: 100%; height: 100%; object-fit: cover; border: 0; border-radius: 0; margin: 0; cursor: zoom-in; }
+    .swatch span { font-size: .72rem; }
+    .swatch-solid { border: 1px solid var(--line); }
+  </style>
 </head>
 <body>
   <p><a href="../index.html">← 一覧へ戻る</a> ／ <a href="shopping.html">購入リストへ</a> ／ <a href="../designs/index.html">デザイン一覧</a></p>
@@ -55,16 +71,30 @@
         : '<p class="empty">まだ項目がありません。</p>';
     }
 
+    const photoSrc = p => /^https?:/.test(p) ? p : '../' + p;
+
     function card(i) {
       const id = ND.esc(i.id);
+      const name = ND.esc(i.name);
+      const isGel = i.category === 'ジェル';
+      const head = isGel
+        ? `<div class="swatchrow">
+             <h3>${name}</h3>
+             ${i.photo
+               ? `<img class="swatch zoom swatch-solid" src="${ND.esc(photoSrc(i.photo))}" alt="${name}の色見本" title="タップで拡大" style="width:56px;height:56px;border-radius:50%;object-fit:cover;flex-shrink:0">`
+               : `<button type="button" class="swatch" data-act="pick" data-id="${id}" title="色見本の写真を入れる"><span>写真</span></button>`}
+           </div>
+           <input type="file" accept="image/*" data-id="${id}" hidden>`
+        : `${i.photo ? `<img src="${ND.esc(photoSrc(i.photo))}" alt="${name}" loading="lazy" class="zoom" title="タップで拡大">` : ''}
+           <h3>${name}</h3>`;
       return `
         <div class="card">
           ${i.low ? '<span class="badge">少なめ</span>' : ''}
-          ${i.photo ? `<img src="${ND.esc(/^https?:/.test(i.photo) ? i.photo : '../' + i.photo)}" alt="${ND.esc(i.name)}" loading="lazy" class="zoom" title="タップで拡大">` : ''}
-          <h3>${ND.esc(i.name)}</h3>
+          ${head}
           <div class="meta">${[i.category, i.color, i.size, i.shop, i.note].filter(Boolean).map(ND.esc).join('<br>')}</div>
           <div class="actions">
             <button data-act="low" data-id="${id}">${i.low ? '少なめを解除' : '少なめにする'}</button>
+            ${isGel ? `<button data-act="pick" data-id="${id}">色見本の写真を${i.photo ? '変える' : '入れる'}</button>` : ''}
             <button data-act="edit" data-id="${id}">編集</button>
             <button data-act="back" data-id="${id}">購入リストに戻す</button>
           </div>
@@ -80,6 +110,10 @@
       if (e.target.matches('img.zoom')) return ND.lightbox(e.target.src, e.target.alt);
       const b = e.target.closest('button[data-act]');
       if (!b) return;
+      if (b.dataset.act === 'pick') {
+        b.closest('.card').querySelector('input[type=file]').click();
+        return;
+      }
       const item = items.find(i => i.id === b.dataset.id);
       try {
         if (b.dataset.act === 'edit') {
@@ -95,6 +129,26 @@
       } catch (err) {
         alert('更新できませんでした: ' + err.message);
       }
+    });
+
+    // 色見本の写真を選んだら、軽くしてドライブに保存し、そのジェルに登録する
+    $('#list').addEventListener('change', async e => {
+      const input = e.target;
+      if (input.type !== 'file') return;
+      const file = input.files[0];
+      if (!file) return;
+      const item = items.find(i => i.id === input.dataset.id);
+      $('#msg').textContent = '色見本の写真を保存しています…';
+      try {
+        const url = await ND.uploadPhoto(file);
+        await ND.send('update', { id: item.id, fields: { photo: url } });
+        $('#msg').textContent = '色見本を保存しました。';
+        await reload();
+      } catch (err) {
+        $('#msg').textContent = '';
+        alert('保存できませんでした: ' + err.message);
+      }
+      input.value = '';
     });
 
     $('#add').onclick = () => ND.openEditor(null, async f => {
