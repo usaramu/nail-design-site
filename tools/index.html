@@ -75,13 +75,14 @@
     function card(i) {
       const id = ND.esc(i.id);
       const name = ND.esc(i.name);
-      const isGel = i.category === 'ジェル';
+      const isGel = i.category === 'ジェル' || i.category === 'パーツ';
+      const label = i.category === 'ジェル' ? '色見本' : '写真';
       const head = isGel
         ? `<div class="swatchrow">
              <h3>${name}</h3>
              ${i.photo
-               ? `<img class="swatch zoom swatch-solid" src="${ND.esc(photoSrc(i.photo))}" alt="${name}の色見本" title="タップで拡大" style="width:56px;height:56px;border-radius:50%;object-fit:cover;flex-shrink:0">`
-               : `<button type="button" class="swatch" data-act="pick" data-id="${id}" title="色見本の写真を入れる"><span>写真</span></button>`}
+               ? `<img class="swatch zoom swatch-solid" src="${ND.esc(photoSrc(i.photo))}" alt="${name}" title="タップで拡大" style="width:56px;height:56px;border-radius:50%;object-fit:cover;flex-shrink:0">`
+               : `<button type="button" class="swatch" data-act="pick" data-id="${id}" title="写真を入れる"><span>写真</span></button>`}
            </div>
            <input type="file" accept="image/*" data-id="${id}" hidden>`
         : `${i.photo ? `<img src="${ND.esc(photoSrc(i.photo))}" alt="${name}" loading="lazy" class="zoom" title="タップで拡大">` : ''}
@@ -93,7 +94,7 @@
           <div class="meta">${[i.category, i.color, i.size, i.shop, i.note].filter(Boolean).map(ND.esc).join('<br>')}</div>
           <div class="actions">
             <button data-act="low" data-id="${id}">${i.low ? '少なめを解除' : '少なめにする'}</button>
-            ${isGel ? `<button data-act="pick" data-id="${id}">色見本の写真を${i.photo ? '変える' : '入れる'}</button>` : ''}
+            ${isGel ? `<button data-act="pick" data-id="${id}">${label}の写真を${i.photo ? '変える' : '入れる'}</button>` : ''}
             <button data-act="edit" data-id="${id}">編集</button>
             <button data-act="back" data-id="${id}">購入リストに戻す</button>
           </div>
@@ -137,11 +138,11 @@
       const file = input.files[0];
       if (!file) return;
       const item = items.find(i => i.id === input.dataset.id);
-      $('#msg').textContent = '色見本の写真を保存しています…';
+      $('#msg').textContent = '写真を保存しています…';
       try {
         const url = await ND.uploadPhoto(file);
         await ND.send('update', { id: item.id, fields: { photo: url } });
-        $('#msg').textContent = '色見本を保存しました。';
+        $('#msg').textContent = '写真を保存しました。';
         await reload();
       } catch (err) {
         $('#msg').textContent = '';
