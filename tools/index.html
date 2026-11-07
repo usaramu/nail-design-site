@@ -60,7 +60,7 @@
       return `
         <div class="card">
           ${i.low ? '<span class="badge">少なめ</span>' : ''}
-          ${i.photo ? `<img src="../${ND.esc(i.photo)}" alt="${ND.esc(i.name)}" loading="lazy" class="zoom" title="タップで拡大">` : ''}
+          ${i.photo ? `<img src="${ND.esc(/^https?:/.test(i.photo) ? i.photo : '../' + i.photo)}" alt="${ND.esc(i.name)}" loading="lazy" class="zoom" title="タップで拡大">` : ''}
           <h3>${ND.esc(i.name)}</h3>
           <div class="meta">${[i.category, i.color, i.size, i.shop, i.note].filter(Boolean).map(ND.esc).join('<br>')}</div>
           <div class="actions">

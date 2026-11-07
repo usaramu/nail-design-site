@@ -51,7 +51,9 @@ const ND = (() => {
         <label>サイズ・容量<input name="size" value="${esc(v.size)}"></label>
         <label>購入先<input name="shop" value="${esc(v.shop)}"></label>
         <label>メモ<input name="note" value="${esc(v.note)}"></label>
-        <label>写真のパス（任意）<input name="photo" value="${esc(v.photo)}" placeholder="images/tools/xxx.jpg"></label>
+        <label>写真（任意・保存前に自動で軽くします）<input type="file" id="nd-file" accept="image/*"></label>
+        <p class="note" id="nd-status" style="margin:4px 0 0"></p>
+        <input type="hidden" name="photo" value="${esc(v.photo)}">
         <label>使うデザイン（任意・複数はカンマ区切り）<input name="designs" value="${esc(v.designs)}" placeholder="harvard"></label>
         <div class="btns"><button type="button" id="nd-cancel">キャンセル</button> <button type="submit">保存</button></div>
       </form>`;
@@ -61,7 +63,18 @@ const ND = (() => {
       e.preventDefault();
       const f = Object.fromEntries(new FormData(e.target));
       Object.keys(f).forEach(k => f[k] = f[k].trim());
-      try { await onSave(f); dlg.close(); } catch (err) { alert('保存できませんでした: ' + err.message); }
+      const file = dlg.querySelector('#nd-file').files[0];
+      try {
+        if (file) {
+          dlg.querySelector('#nd-status').textContent = '写真を軽くして保存しています…';
+          f.photo = await uploadPhoto(file);
+        }
+        await onSave(f);
+        dlg.close();
+      } catch (err) {
+        dlg.querySelector('#nd-status').textContent = '';
+        alert('保存できませんでした: ' + err.message);
+      }
     };
     dlg.showModal();
   }
@@ -84,5 +97,36 @@ const ND = (() => {
     d.showModal();
   }
 
-  return { cfg, configured, esc, categories, list, send, openEditor, designsOf, lightbox };
+  // 写真を軽くする（長辺1000px・JPEG 80%）。送る前にブラウザ側で行う
+  function compressImage(file, maxSide = 1000, quality = 0.8) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.width * scale);
+        c.height = Math.round(img.height * scale);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(img.src);
+        c.toBlob(b => b ? resolve(b) : reject(new Error('画像を変換できませんでした')), 'image/jpeg', quality);
+      };
+      img.onerror = () => reject(new Error('画像を読み込めませんでした'));
+      img.src = URL.createObjectURL(file);
+    });
+  }
+
+  // 軽くした写真をApps Script経由でGoogleドライブに保存し、表示用URLを返す
+  async function uploadPhoto(file) {
+    const blob = await compressImage(file);
+    const data = await new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(String(r.result).split(',')[1]);
+      r.onerror = () => reject(new Error('写真を読み込めませんでした'));
+      r.readAsDataURL(blob);
+    });
+    const res = await send('upload', { name: 'photo.jpg', data });
+    return res.url;
+  }
+
+  return { cfg, configured, esc, categories, list, send, openEditor, designsOf, lightbox, uploadPhoto };
 })();

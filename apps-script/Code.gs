@@ -33,6 +33,16 @@ function doPost(e) {
   const req = JSON.parse(e.postData.contents);
   if (req.token !== TOKEN) return out_({ error: 'unauthorized' });
 
+  // 写真のアップロード（軽くした画像を受け取り、Googleドライブに保存して表示用URLを返す）
+  if (req.action === 'upload') {
+    const blob = Utilities.newBlob(Utilities.base64Decode(req.data), 'image/jpeg', req.name || 'photo.jpg');
+    const folders = DriveApp.getFoldersByName('nail-photos');
+    const folder = folders.hasNext() ? folders.next() : DriveApp.createFolder('nail-photos');
+    const file = folder.createFile(blob);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    return out_({ ok: true, url: 'https://lh3.googleusercontent.com/d/' + file.getId() });
+  }
+
   const sh = sheet_();
   const values = sh.getDataRange().getValues();
   const headers = values[0];
