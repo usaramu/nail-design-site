@@ -6,33 +6,35 @@
   <title>持ち物リスト</title>
   <link rel="stylesheet" href="../assets/style.css?v=202611091502">
   <style>
-    /* ジェルの色見本（名前の右横の丸） */
-    .swatchrow { display: flex; align-items: center; gap: 14px; }
-    .swatchrow h3 { flex: 1; margin: 0; }
-    .swatch {
-      width: 56px; height: 56px; flex-shrink: 0;
-      border-radius: 50%; padding: 0; overflow: hidden;
-      border: 1px dashed var(--gold); background: var(--surface);
-      display: flex; align-items: center; justify-content: center;
-      color: var(--muted);
-    }
-    .swatch:hover { background: var(--surface); color: var(--bordeaux); }
-    .swatch img { width: 100%; height: 100%; object-fit: cover; border: 0; border-radius: 0; margin: 0; cursor: zoom-in; }
-    .swatch span { font-size: .72rem; }
-    .swatch-solid { border: 1px solid var(--line); }
-    .has-badge .swatchrow { padding-top: 30px; }
+    /* スマホで横に2つ並ぶ小さめのカード */
+    #list.grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 22px 14px; }
+    #list .card { text-align: center; padding-top: 14px; }
 
-    /* 写真があるとき：大きな丸を主役にして、名前は小さく */
-    .card img.swatch-big {
-      width: 132px; height: 132px; aspect-ratio: 1 / 1;
-      border-radius: 50%; object-fit: cover;
-      border: 1px solid var(--line); outline: 1px solid var(--gold); outline-offset: 4px;
-      margin: 8px auto 18px; display: block; cursor: zoom-in;
+    /* ジェル・パーツ：丸い写真が主役。写真がないときは点線の丸 */
+    .circle {
+      width: 92px; height: 92px; aspect-ratio: 1 / 1;
+      border-radius: 50%; display: block; margin: 6px auto 14px;
     }
-    .card h3.name-small {
-      font-family: var(--sans); font-weight: 400; font-size: .86rem;
-      letter-spacing: 0; text-align: center; margin: 0 0 6px; color: var(--ink);
+    #list .card img.circle {
+      width: 92px; height: 92px; aspect-ratio: 1 / 1; border-radius: 50%;
+      margin: 6px auto 14px; object-fit: cover; border: 1px solid var(--line);
+      outline: 1px solid var(--gold); outline-offset: 3px; cursor: zoom-in;
     }
+    button.circle {
+      padding: 0; border: 1px dashed var(--gold); background: var(--surface);
+      color: var(--muted); font-size: .72rem;
+    }
+    button.circle:hover { background: var(--surface); color: var(--bordeaux); }
+
+    #list .card > img.zoom:not(.circle) { margin-bottom: 10px; }
+    #list .card h3 {
+      font-family: var(--sans); font-weight: 400; font-size: .84rem;
+      letter-spacing: 0; line-height: 1.6; margin: 0 0 4px; color: var(--ink);
+    }
+    #list .card .badge-inline { margin-left: 4px; font-size: .66rem; white-space: nowrap; }
+    #list .meta { font-size: .72rem; line-height: 1.7; }
+    #list .actions { justify-content: center; gap: 5px; margin-top: 10px; }
+    #list .actions button { font-size: .68rem; padding: 3px 7px; }
   </style>
 </head>
 <body>
@@ -88,30 +90,27 @@
     function card(i) {
       const id = ND.esc(i.id);
       const name = ND.esc(i.name);
-      const isGel = i.category === 'ジェル' || i.category === 'パーツ';
-      const label = i.category === 'ジェル' ? '色見本' : '写真';
-      // 写真があるときは、大きな丸の写真を主役に、名前は小さく添える
-      const head = isGel
-        ? (i.photo
-            ? `<img class="swatch-big zoom" src="${ND.esc(photoSrc(i.photo))}" alt="${name}" title="タップで拡大">
-               <h3 class="name-small">${name}</h3>`
-            : `<div class="swatchrow">
-                 <h3>${name}</h3>
-                 <button type="button" class="swatch" data-act="pick" data-id="${id}" title="写真を入れる"><span>写真</span></button>
-               </div>`)
-          + `<input type="file" accept="image/*" data-id="${id}" hidden>`
-        : `${i.photo ? `<img src="${ND.esc(photoSrc(i.photo))}" alt="${name}" loading="lazy" class="zoom" title="タップで拡大">` : ''}
-           <h3>${name}</h3>`;
+      const round = i.category === 'ジェル' || i.category === 'パーツ';
+      let head;
+      if (round) {
+        // 写真があれば丸い写真、なければ押して写真を入れる点線の丸
+        head = (i.photo
+          ? `<img class="circle zoom" src="${ND.esc(photoSrc(i.photo))}" alt="${name}" title="タップで拡大">`
+          : `<button type="button" class="circle" data-act="pick" data-id="${id}">写真</button>`)
+          + `<input type="file" accept="image/*" data-id="${id}" hidden>`;
+      } else {
+        head = i.photo ? `<img src="${ND.esc(photoSrc(i.photo))}" alt="${name}" loading="lazy" class="zoom" title="タップで拡大">` : '';
+      }
       return `
-        <div class="card${i.low ? ' has-badge' : ''}">
-          ${i.low ? '<span class="badge">少なめ</span>' : ''}
+        <div class="card">
           ${head}
-          <div class="meta">${[i.category, i.color, i.size, i.shop, i.note].filter(Boolean).map(ND.esc).join('<br>')}</div>
+          <h3>${name}${i.low ? '<span class="badge-inline">少なめ</span>' : ''}</h3>
+          <div class="meta">${[i.color, i.size, i.shop].filter(Boolean).map(ND.esc).join('<br>')}</div>
           <div class="actions">
-            <button data-act="low" data-id="${id}">${i.low ? '少なめを解除' : '少なめにする'}</button>
-            ${isGel ? `<button data-act="pick" data-id="${id}">${label}の写真を${i.photo ? '変える' : '入れる'}</button>` : ''}
+            <button data-act="low" data-id="${id}">${i.low ? '少なめ解除' : '少なめ'}</button>
+            ${round && i.photo ? `<button data-act="pick" data-id="${id}">写真</button>` : ''}
             <button data-act="edit" data-id="${id}">編集</button>
-            <button data-act="back" data-id="${id}">購入リストに戻す</button>
+            <button data-act="back" data-id="${id}">購入リストへ</button>
           </div>
         </div>`;
     }
@@ -146,7 +145,7 @@
       }
     });
 
-    // 色見本の写真を選んだら、軽くしてドライブに保存し、そのジェルに登録する
+    // 写真を選んだら、小さくしてその持ち物に保存する
     $('#list').addEventListener('change', async e => {
       const input = e.target;
       if (input.type !== 'file') return;
