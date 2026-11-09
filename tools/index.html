@@ -20,6 +20,19 @@
     .swatch img { width: 100%; height: 100%; object-fit: cover; border: 0; border-radius: 0; margin: 0; cursor: zoom-in; }
     .swatch span { font-size: .72rem; }
     .swatch-solid { border: 1px solid var(--line); }
+    .has-badge .swatchrow { padding-top: 30px; }
+
+    /* 写真があるとき：大きな丸を主役にして、名前は小さく */
+    .card img.swatch-big {
+      width: 132px; height: 132px; aspect-ratio: 1 / 1;
+      border-radius: 50%; object-fit: cover;
+      border: 1px solid var(--line); outline: 1px solid var(--gold); outline-offset: 4px;
+      margin: 8px auto 18px; display: block; cursor: zoom-in;
+    }
+    .card h3.name-small {
+      font-family: var(--sans); font-weight: 400; font-size: .86rem;
+      letter-spacing: 0; text-align: center; margin: 0 0 6px; color: var(--ink);
+    }
   </style>
 </head>
 <body>
@@ -77,18 +90,20 @@
       const name = ND.esc(i.name);
       const isGel = i.category === 'ジェル' || i.category === 'パーツ';
       const label = i.category === 'ジェル' ? '色見本' : '写真';
+      // 写真があるときは、大きな丸の写真を主役に、名前は小さく添える
       const head = isGel
-        ? `<div class="swatchrow">
-             <h3>${name}</h3>
-             ${i.photo
-               ? `<img class="swatch zoom swatch-solid" src="${ND.esc(photoSrc(i.photo))}" alt="${name}" title="タップで拡大" style="width:56px;height:56px;border-radius:50%;object-fit:cover;flex-shrink:0">`
-               : `<button type="button" class="swatch" data-act="pick" data-id="${id}" title="写真を入れる"><span>写真</span></button>`}
-           </div>
-           <input type="file" accept="image/*" data-id="${id}" hidden>`
+        ? (i.photo
+            ? `<img class="swatch-big zoom" src="${ND.esc(photoSrc(i.photo))}" alt="${name}" title="タップで拡大">
+               <h3 class="name-small">${name}</h3>`
+            : `<div class="swatchrow">
+                 <h3>${name}</h3>
+                 <button type="button" class="swatch" data-act="pick" data-id="${id}" title="写真を入れる"><span>写真</span></button>
+               </div>`)
+          + `<input type="file" accept="image/*" data-id="${id}" hidden>`
         : `${i.photo ? `<img src="${ND.esc(photoSrc(i.photo))}" alt="${name}" loading="lazy" class="zoom" title="タップで拡大">` : ''}
            <h3>${name}</h3>`;
       return `
-        <div class="card">
+        <div class="card${i.low ? ' has-badge' : ''}">
           ${i.low ? '<span class="badge">少なめ</span>' : ''}
           ${head}
           <div class="meta">${[i.category, i.color, i.size, i.shop, i.note].filter(Boolean).map(ND.esc).join('<br>')}</div>
