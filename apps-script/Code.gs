@@ -80,8 +80,16 @@ function promptAction_(req) {
   return out_({ error: 'unknown action' });
 }
 
-// 変更・追加（サイトから操作するとき）
+// 変更・追加（サイトから操作するとき）。途中で失敗しても理由をサイトに返す
 function doPost(e) {
+  try {
+    return handlePost_(e);
+  } catch (err) {
+    return out_({ error: String(err && err.message || err) });
+  }
+}
+
+function handlePost_(e) {
   const req = JSON.parse(e.postData.contents);
   if (req.token !== TOKEN) return out_({ error: 'unauthorized' });
 

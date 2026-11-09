@@ -70,7 +70,7 @@
         : '<p class="empty">まだありません。</p>';
     }
 
-    const photoSrc = p => /^https?:/.test(p) ? p : '../' + p;
+    const photoSrc = p => /^(https?:|data:)/.test(p) ? p : '../' + p;
 
     function card(i) {
       const id = ND.esc(i.id);
@@ -140,7 +140,7 @@
       const item = items.find(i => i.id === input.dataset.id);
       $('#msg').textContent = '写真を保存しています…';
       try {
-        const url = await ND.uploadPhoto(file);
+        const url = await ND.photoDataUrl(file);
         await ND.send('update', { id: item.id, fields: { photo: url } });
         $('#msg').textContent = '写真を保存しました。';
         await reload();

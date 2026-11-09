@@ -84,8 +84,8 @@ const ND = (() => {
       const file = dlg.querySelector('#nd-file').files[0];
       try {
         if (file) {
-          dlg.querySelector('#nd-status').textContent = '写真を軽くして保存しています…';
-          f.photo = await uploadPhoto(file);
+          dlg.querySelector('#nd-status').textContent = '写真を保存しています…';
+          f.photo = await photoDataUrl(file);
         }
         await onSave(f);
         dlg.close();
@@ -133,6 +133,32 @@ const ND = (() => {
     });
   }
 
+  // 写真を小さな画像データにする（シートのセル上限 50,000 文字に収まるまで縮める）
+  // ドライブを使わないので、Apps Script の追加設定なしで保存できる
+  function loadImage(file) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('画像を読み込めませんでした'));
+      img.src = URL.createObjectURL(file);
+    });
+  }
+  async function photoDataUrl(file) {
+    const img = await loadImage(file);
+    const steps = [[560, .78], [480, .74], [400, .7], [320, .68], [260, .62], [200, .6]];
+    for (const [side, q] of steps) {
+      const scale = Math.min(1, side / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * scale);
+      c.height = Math.round(img.height * scale);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      const url = c.toDataURL('image/jpeg', q);
+      if (url.length < 45000) { URL.revokeObjectURL(img.src); return url; }
+    }
+    URL.revokeObjectURL(img.src);
+    throw new Error('写真を小さくできませんでした');
+  }
+
   // 軽くした写真をApps Script経由でGoogleドライブに保存し、表示用URLを返す
   async function uploadPhoto(file) {
     const blob = await compressImage(file);
@@ -146,5 +172,5 @@ const ND = (() => {
     return res.url;
   }
 
-  return { cfg, configured, esc, categories, list, send, openEditor, designsOf, lightbox, uploadPhoto, copyText };
+  return { cfg, configured, esc, categories, list, send, openEditor, designsOf, lightbox, uploadPhoto, photoDataUrl, copyText };
 })();
