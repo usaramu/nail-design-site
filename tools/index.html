@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#fbf7f6">
   <title>持ち物リスト</title>
-  <link rel="stylesheet" href="../assets/style.css?v=202611101841">
+  <link rel="stylesheet" href="../assets/style.css?v=202611101847">
   <style>
     /* 明るい下地。下のボタンで切り替え、タップで詳細シート */
     :root {
@@ -168,8 +168,8 @@
   <button class="add" id="add" aria-label="持ち物を追加">＋</button>
   <nav class="dock" id="dock"></nav>
 
-  <script src="../assets/config.js?v=202611101841"></script>
-  <script src="../assets/app.js?v=202611101841"></script>
+  <script src="../assets/config.js?v=202611101847"></script>
+  <script src="../assets/app.js?v=202611101847"></script>
   <script>
     const $ = s => document.querySelector(s);
     let items = [];
@@ -282,14 +282,23 @@
         if (act === 'pick') return d.querySelector('input[type=file]').click();
         if (act === 'edit') {
           d.close();
-          return ND.openEditor(i, async f => { await ND.send('update', { id: i.id, fields: f }); await reload(); });
+          return ND.openEditor(i, f => {
+            Object.assign(i, f);
+            render();
+            ND.later(() => ND.send('update', { id: i.id, fields: f }), reload);
+          });
         }
-        try {
-          if (act === 'low') await ND.send('setLow', { id: i.id, low: !i.low });
-          if (act === 'back') await ND.send('setStatus', { id: i.id, status: '購入リスト' });
-          d.close();
-          await reload();
-        } catch (err) { alert('更新できませんでした: ' + err.message); }
+        if (act === 'low') {
+          i.low = !i.low;
+          const low = i.low;
+          ND.later(() => ND.send('setLow', { id: i.id, low }), reload);
+        }
+        if (act === 'back') {
+          i.status = '購入リスト';
+          ND.later(() => ND.send('setStatus', { id: i.id, status: '購入リスト' }), reload);
+        }
+        d.close();
+        render();
       });
 
       d.querySelector('input[type=file]').addEventListener('change', async e => {
@@ -297,12 +306,12 @@
         if (!file) return;
         try {
           const url = await ND.photoDataUrl(file);
-          await ND.send('update', { id: i.id, fields: { photo: url } });
+          i.photo = url;
           d.close();
-          await reload();
-          const fresh = items.find(x => x.id === i.id);
-          if (fresh) openSheet(fresh);
-        } catch (err) { alert('保存できませんでした: ' + err.message); }
+          render();
+          openSheet(i);
+          ND.later(() => ND.send('update', { id: i.id, fields: { photo: url } }), reload);
+        } catch (err) { alert('写真を読み込めませんでした: ' + err.message); }
       });
 
       d.showModal();
@@ -325,9 +334,11 @@
       const item = b && items.find(i => i.id === b.dataset.id);
       if (item) openSheet(item);
     });
-    $('#add').onclick = () => ND.openEditor(null, async f => {
-      await ND.send('add', { item: { ...f, status: '持ち物', low: false } });
-      await reload();
+    $('#add').onclick = () => ND.openEditor(null, f => {
+      const item = { ...f, status: '持ち物', low: false };
+      items.push({ ...item, id: 'tmp' + Date.now() });
+      render();
+      ND.later(() => ND.send('add', { item }), reload);
     });
 
     reload();

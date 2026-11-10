@@ -78,6 +78,22 @@ const ND = (() => {
     return j;
   }
 
+  // 画面は先に変えて、送信は裏で順番に行う。全部送り終わったら最新を取り直す。
+  // 失敗したときは知らせて、スプレッドシートの内容に戻す
+  let queue = Promise.resolve();
+  let pending = 0;
+  function later(task, refresh) {
+    pending++;
+    queue = queue.then(task).then(
+      () => { pending--; if (!pending && refresh) refresh(); },
+      err => { pending--; alert('保存できませんでした: ' + err.message); if (refresh) refresh(); }
+    );
+  }
+  // 送信中にページを閉じようとしたら確認する
+  window.addEventListener('beforeunload', e => {
+    if (pending) { e.preventDefault(); e.returnValue = ''; }
+  });
+
   // 追加・編集ダイアログ（item が null のときは追加）
   function openEditor(item, onSave) {
     document.querySelector('#nd-dlg')?.remove();
@@ -207,5 +223,5 @@ const ND = (() => {
     return res.url;
   }
 
-  return { cfg, configured, esc, categories, colorTags, textureTags, tagsOf, list, listFast, send, openEditor, designsOf, lightbox, uploadPhoto, photoDataUrl, copyText };
+  return { cfg, configured, esc, later, categories, colorTags, textureTags, tagsOf, list, listFast, send, openEditor, designsOf, lightbox, uploadPhoto, photoDataUrl, copyText };
 })();

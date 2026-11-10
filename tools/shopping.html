@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>購入リスト</title>
-  <link rel="stylesheet" href="../assets/style.css?v=202611101841">
+  <link rel="stylesheet" href="../assets/style.css?v=202611101847">
 </head>
 <body>
   <p><a href="../index.html">← 一覧へ戻る</a> ／ <a href="index.html">持ち物リストへ</a> ／ <a href="../designs/index.html">デザイン一覧</a></p>
@@ -15,8 +15,8 @@
   <div id="list"></div>
   <p id="msg" class="note"></p>
 
-  <script src="../assets/config.js?v=202611101841"></script>
-  <script src="../assets/app.js?v=202611101841"></script>
+  <script src="../assets/config.js?v=202611101847"></script>
+  <script src="../assets/app.js?v=202611101847"></script>
   <script>
     const $ = s => document.querySelector(s);
     let items = [];
@@ -68,42 +68,44 @@
     $('#low').addEventListener('click', async e => {
       const b = e.target.closest('button[data-restock]');
       if (!b) return;
-      try {
-        await ND.send('setStatus', { id: b.dataset.restock, status: '購入リスト' });
-        await reload();
-      } catch (err) {
-        alert('更新できませんでした: ' + err.message);
-      }
+      const item = items.find(i => i.id === b.dataset.restock);
+      if (!item) return;
+      item.status = '購入リスト';
+      render();
+      ND.later(() => ND.send('setStatus', { id: item.id, status: '購入リスト' }), reload);
     });
 
     // チェック → 持ち物へ移動（少なめの印は外す）
     $('#list').addEventListener('change', async e => {
       if (!e.target.matches('input[type=checkbox]')) return;
-      e.target.disabled = true;
-      try {
-        const id = e.target.dataset.check;
+      const id = e.target.dataset.check;
+      const item = items.find(i => i.id === id);
+      if (!item) return;
+      item.status = '持ち物';
+      item.low = false;
+      render();
+      ND.later(async () => {
         await ND.send('setStatus', { id, status: '持ち物' });
         await ND.send('setLow', { id, low: false });
-        await reload();
-      } catch (err) {
-        alert('移動できませんでした: ' + err.message);
-        e.target.disabled = false;
-      }
+      }, reload);
     });
 
     $('#list').addEventListener('click', e => {
       const b = e.target.closest('button[data-edit]');
       if (!b) return;
       const item = items.find(i => i.id === b.dataset.edit);
-      ND.openEditor(item, async f => {
-        await ND.send('update', { id: item.id, fields: f });
-        await reload();
+      ND.openEditor(item, f => {
+        Object.assign(item, f);
+        render();
+        ND.later(() => ND.send('update', { id: item.id, fields: f }), reload);
       });
     });
 
-    $('#add').onclick = () => ND.openEditor(null, async f => {
-      await ND.send('add', { item: { ...f, status: '購入リスト', low: false } });
-      await reload();
+    $('#add').onclick = () => ND.openEditor(null, f => {
+      const item = { ...f, status: '購入リスト', low: false };
+      items.push({ ...item, id: 'tmp' + Date.now() });
+      render();
+      ND.later(() => ND.send('add', { item }), reload);
     });
 
     reload();
