@@ -79,9 +79,9 @@
     .nm { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: .7rem; line-height: 1.45; color: var(--muted); }
     /* 少なめ：丸に耳がついただけの、小さなうさぎアイコン（SVG） */
     .usa {
-      position: absolute; top: -2px; left: calc(50% + 16px); z-index: 1;
-      width: 22px; height: 25px; transform: rotate(10deg);
-      filter: drop-shadow(0 2px 3px rgba(122, 31, 43, .25));
+      position: absolute; top: -6px; left: calc(50% + 15px); z-index: 1;
+      width: 24px; height: 28px; transform: rotate(10deg);
+      filter: drop-shadow(0 2px 3px rgba(122, 31, 43, .22));
     }
     .usa.inline { position: relative; top: auto; left: auto; display: inline-block; flex-shrink: 0; margin: 0 2px 0 6px; transform: none; vertical-align: middle; }
 
@@ -196,15 +196,16 @@
       ? (i.parttype ? [String(i.parttype)] : [])
       : [...ND.tagsOf(i.colortag), ...ND.tagsOf(i.texture)];
     // 少なめのうさぎ（丸い顔＋耳2本）
-    const bunny = (extra = '') => `<svg class="usa ${extra}" viewBox="0 0 24 27" role="img" aria-label="すくなめ"><title>すくなめ</title>
-      <g fill="#f6c9d2" stroke="#fff" stroke-width="2" stroke-linejoin="round">
-        <ellipse cx="7.6" cy="8" rx="3.2" ry="6.8" transform="rotate(-12 7.6 14)"/>
-        <ellipse cx="16.4" cy="8" rx="3.2" ry="6.8" transform="rotate(12 16.4 14)"/>
-        <circle cx="12" cy="18.2" r="7.6"/>
-      </g>
-      <g fill="#eaa2b3">
-        <ellipse cx="7.6" cy="8.4" rx="1.2" ry="4" transform="rotate(-12 7.6 14)"/>
-        <ellipse cx="16.4" cy="8.4" rx="1.2" ry="4" transform="rotate(12 16.4 14)"/>
+    const bunnyShapes = `
+        <rect x="5.6" y="1.6" width="5.4" height="13.5" rx="2.7" transform="rotate(-11 8.3 15)"/>
+        <rect x="13" y="1.6" width="5.4" height="13.5" rx="2.7" transform="rotate(11 15.7 15)"/>
+        <ellipse cx="12" cy="19.4" rx="8" ry="7.2"/>`;
+    const bunny = (extra = '') => `<svg class="usa ${extra}" viewBox="-1 -1 26 30" role="img" aria-label="すくなめ"><title>すくなめ</title>
+      <g fill="#fff" stroke="#fff" stroke-width="3.4" stroke-linejoin="round">${bunnyShapes}</g>
+      <g fill="#f5bccb">${bunnyShapes}</g>
+      <g fill="#ec96ab">
+        <rect x="7.4" y="4" width="1.8" height="8" rx=".9" transform="rotate(-11 8.3 15)"/>
+        <rect x="14.8" y="4" width="1.8" height="8" rx=".9" transform="rotate(11 15.7 15)"/>
       </g></svg>`;
     const photoSrc = p => /^(https?:|data:)/.test(p) ? p : '../' + p;
     // 写真欄が「text:ベース」のときは、写真の代わりに文字の丸を出す
