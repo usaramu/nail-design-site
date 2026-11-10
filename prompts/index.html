@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>指示プロンプト</title>
-  <link rel="stylesheet" href="../assets/style.css?v=202611110238">
+  <link rel="stylesheet" href="../assets/style.css?v=202611110240">
   <style>
     /* タイトルだけの一覧。タップで本文とボタンが開く */
     #list { border-bottom: 1px solid var(--line); }
@@ -26,20 +26,48 @@
       background: #fbdbe2; color: var(--bordeaux); font-weight: 500;
       padding: 0 6px; border-radius: 999px; font-size: .9em;
     }
-    .insert { margin: 8px 0 0; }
+    /* 編集画面：重ねて出さず、ふつうのページとして表示（iPhone でカーソルやタップがずれないように） */
+    body.editing #main { display: none; }
+    body.editing { padding-top: 0; }
+    .ed-bar button[type=submit] { background: var(--bordeaux); color: #fff; border-color: var(--bordeaux); }
+    #pr-edit[hidden] { display: none; }
+    .ed-bar {
+      position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 10px;
+      margin: 0 -20px 14px; padding: 10px 20px; background: var(--surface, #fff);
+      border-bottom: 1px solid var(--line);
+    }
+    .ed-bar h3 { flex: 1; margin: 0 !important; text-align: center; font-size: 1rem; }
+    .ed-bar button { padding: 8px 16px; border-radius: 10px; font-size: .92rem; }
+    #pr-edit label { display: block; margin-top: 12px; }
+    #pr-edit input, #pr-edit textarea { font-size: 16px; width: 100%; box-sizing: border-box; }
+    #pr-edit textarea { resize: none; overflow: hidden; line-height: 1.7; min-height: 40vh; }
+    .ed-label { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; }
     .insert button { font-size: .8rem; padding: 5px 12px; border-radius: 999px; }
   </style>
 </head>
 <body>
+  <div id="main">
   <p><a href="../index.html">← ホームへ戻る</a></p>
   <h1>指示プロンプト</h1>
   <p class="topbtns"><button id="add">＋ プロンプトを追加</button> <button id="copyinv">持ち物をコピー</button></p>
 
   <div id="list"></div>
   <p id="msg" class="note"></p>
+  </div>
 
-  <script src="../assets/config.js?v=202611110238"></script>
-  <script src="../assets/app.js?v=202611110238"></script>
+  <form id="pr-edit" hidden>
+    <div class="ed-bar">
+      <button type="button" id="pr-cancel">キャンセル</button>
+      <h3 id="pr-head">編集</h3>
+      <button type="submit">保存</button>
+    </div>
+    <label>タイトル<input name="title" required></label>
+    <div class="ed-label"><span>プロンプト本文</span><span class="insert"><button type="button" id="pr-inv">＋ 持ち物を差し込む</button></span></div>
+    <textarea name="body" required aria-label="プロンプト本文"></textarea>
+  </form>
+
+  <script src="../assets/config.js?v=202611110240"></script>
+  <script src="../assets/app.js?v=202611110240"></script>
   <script>
     const $ = s => document.querySelector(s);
     let prompts = [];
@@ -108,60 +136,53 @@
       }
     });
 
-    // 追加・編集フォーム（タイトルと本文）
+    // 追加・編集（ページを切り替えて表示）
+    const form = $('#pr-edit'), ta = form.querySelector('textarea');
+    let editing = null, backY = 0;
+    const grow = () => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; };
+    ta.addEventListener('input', grow);
+
     function openForm(p) {
-      document.querySelector('#pr-dlg')?.remove();
-      const dlg = document.createElement('dialog');
-      dlg.id = 'pr-dlg';
-      dlg.innerHTML = `
-        <form id="pr-form">
-          <div class="form-head" tabindex="-1" autofocus><h3>${p ? '編集' : '追加'}</h3></div>
-          <div class="form-body">
-            <label>タイトル<input name="title" required value="${ND.esc(p?.title || '')}"></label>
-            <label class="grow">プロンプト本文<textarea name="body" required>${ND.esc(p?.body || '')}</textarea></label>
-            <p class="insert"><button type="button" id="pr-inv">＋ 持ち物を差し込む</button></p>
-          </div>
-          <div class="form-foot"><button type="button" id="pr-cancel">キャンセル</button><button type="submit">保存</button></div>
-        </form>`;
-      document.body.appendChild(dlg);
-      dlg.querySelector('#pr-cancel').onclick = () => dlg.close();
-      // カーソルの位置に {持ち物} を入れる（コピーするとき今の持ち物一覧に置き換わる）
-      dlg.querySelector('#pr-inv').onclick = () => {
-        const ta = dlg.querySelector('textarea[name=body]');
-        const a = ta.selectionStart ?? ta.value.length, b = ta.selectionEnd ?? a;
-        ta.value = ta.value.slice(0, a) + TOKEN_INV + ta.value.slice(b);
-        ta.focus();
-        ta.setSelectionRange(a + TOKEN_INV.length, a + TOKEN_INV.length);
-      };
-      dlg.querySelector('#pr-form').onsubmit = async e => {
-        e.preventDefault();
-        const f = Object.fromEntries(new FormData(e.target));
-        const fields = { title: f.title.trim(), body: f.body.trim() };
-        if (p) {
-          Object.assign(p, fields);
-          ND.later(() => ND.send('updatePrompt', { id: p.id, ...fields }), reload);
-        } else {
-          prompts.push({ id: 'tmp' + Date.now(), ...fields });
-          ND.later(() => ND.send('addPrompt', fields), reload);
-        }
-        dlg.close();
-        render();
-      };
-      // iPhone のキーボードが出ても、見えている範囲にぴったり収める
-      const vv = window.visualViewport;
-      const fit = () => {
-        if (!vv) return;
-        dlg.style.height = vv.height + 'px';
-        dlg.style.top = vv.offsetTop + 'px';
-      };
-      if (vv) { vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit); }
-      dlg.addEventListener('close', () => {
-        if (vv) { vv.removeEventListener('resize', fit); vv.removeEventListener('scroll', fit); }
-        dlg.remove();
-      });
-      dlg.showModal();
-      fit();
+      editing = p;
+      backY = scrollY;
+      $('#pr-head').textContent = p ? '編集' : '追加';
+      form.title.value = p?.title || '';
+      ta.value = p?.body || '';
+      document.body.classList.add('editing');
+      form.hidden = false;
+      scrollTo(0, 0);
+      grow();
     }
+    function closeForm() {
+      form.hidden = true;
+      document.body.classList.remove('editing');
+      document.activeElement?.blur();
+      scrollTo(0, backY);
+    }
+    $('#pr-cancel').onclick = closeForm;
+    // カーソルの位置に {持ち物} を入れる（コピーするとき今の持ち物一覧に置き換わる）
+    $('#pr-inv').addEventListener('pointerdown', e => e.preventDefault()); // 押してもキーボードが閉じない
+    $('#pr-inv').onclick = () => {
+      const a = ta.selectionStart ?? ta.value.length, b = ta.selectionEnd ?? a;
+      ta.value = ta.value.slice(0, a) + TOKEN_INV + ta.value.slice(b);
+      ta.focus();
+      ta.setSelectionRange(a + TOKEN_INV.length, a + TOKEN_INV.length);
+      grow();
+    };
+    form.onsubmit = e => {
+      e.preventDefault();
+      const p = editing;
+      const fields = { title: form.title.value.trim(), body: ta.value.trim() };
+      if (p) {
+        Object.assign(p, fields);
+        ND.later(() => ND.send('updatePrompt', { id: p.id, ...fields }), reload);
+      } else {
+        prompts.push({ id: 'tmp' + Date.now(), ...fields });
+        ND.later(() => ND.send('addPrompt', fields), reload);
+      }
+      render();
+      closeForm();
+    };
 
     $('#add').onclick = () => openForm(null);
     $('#copyinv').onclick = async e => {
