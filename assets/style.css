@@ -204,6 +204,30 @@ dialog input:focus, dialog select:focus, dialog textarea:focus, form input:focus
 dialog button[type=submit] { background: var(--bordeaux); color: #fff; }
 dialog button[type=submit]:hover { background: #5c1620; }
 .btns { text-align: right; margin-top: 18px; }
+
+/* 追加・編集の入力画面：下から出るシート。
+   中身だけがスクロールし、保存ボタンはいつも下に見える。背景は動かない */
+html:has(dialog[open]) { overflow: hidden; }
+#nd-dlg, #pr-dlg {
+  margin: auto auto 0; width: 100%; max-width: 560px; max-height: 92dvh;
+  padding: 0; border: 0; border-radius: 18px 18px 0 0; overflow: hidden;
+  background: var(--surface); box-shadow: 0 -10px 30px rgba(42, 28, 32, .12);
+}
+#nd-dlg[open], #pr-dlg[open] { animation: nd-up .25s ease-out; }
+@keyframes nd-up { from { transform: translateY(32px); opacity: 0; } to { transform: none; opacity: 1; } }
+#nd-dlg form, #pr-dlg form { display: flex; flex-direction: column; max-height: 92dvh; }
+.form-head { padding: 16px 20px 10px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
+.form-head h3 { margin: 0 !important; }
+.form-body { flex: 1; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 4px 20px 20px; }
+.form-foot {
+  flex-shrink: 0; display: flex; gap: 10px; background: var(--surface);
+  padding: 12px 20px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line);
+}
+.form-foot button { flex: 1; padding: 12px 8px; border-radius: 10px; font-size: .92rem; }
+/* 16px 未満だと iPhone が入力時に画面を拡大して、がたつく原因になる */
+dialog input, dialog select, dialog textarea { font-size: 16px; }
+dialog textarea { resize: vertical; line-height: 1.7; }
+@media (prefers-reduced-motion: reduce) { #nd-dlg[open], #pr-dlg[open] { animation: none; } }
 .btns button { margin-left: 6px; }
 
 /* ホームのメニュー：ノートの目次のように罫線で並べる */

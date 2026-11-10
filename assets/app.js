@@ -102,7 +102,8 @@ const ND = (() => {
     dlg.id = 'nd-dlg';
     dlg.innerHTML = `
       <form id="nd-form">
-        <h3>${item ? '編集' : '追加'}</h3>
+        <div class="form-head"><h3>${item ? '編集' : '追加'}</h3></div>
+        <div class="form-body">
         <label>商品名<input name="name" required value="${esc(v.name)}"></label>
         <label>カテゴリ<select name="category">${categories.map(c => `<option${v.category === c ? ' selected' : ''}>${c}</option>`).join('')}</select></label>
         <label>色・番号<input name="color" value="${esc(v.color)}"></label>
@@ -116,7 +117,8 @@ const ND = (() => {
         <p class="note" id="nd-status" style="margin:4px 0 0"></p>
         <input type="hidden" name="photo" value="${esc(v.photo)}">
         <label>使うデザイン<input name="designs" value="${esc(v.designs)}" placeholder="harvard"></label>
-        <div class="btns"><button type="button" id="nd-cancel">キャンセル</button> <button type="submit">保存</button></div>
+        </div>
+        <div class="form-foot"><button type="button" id="nd-cancel">キャンセル</button><button type="submit">保存</button></div>
       </form>`;
     document.body.appendChild(dlg);
     dlg.querySelector('#nd-cancel').onclick = () => dlg.close();
