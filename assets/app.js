@@ -1,6 +1,10 @@
 const ND = (() => {
   const cfg = window.ND_CONFIG || {};
   const categories = ['ジェル', 'ツール', 'パーツ', '基本用品'];
+  // 色タグ・質感タグ（シートの colortag / texture 列にカンマ区切りで入る）
+  const colorTags = ['赤系', 'ピンク系', 'オレンジ系', 'ベージュ系', 'ブラウン系', '白系', '黒系', '青系', '紫系', '緑系', '黄系', 'ゴールド系', 'シルバー系', 'クリア', 'マルチ'];
+  const textureTags = ['ツヤ', 'マット', 'シアー', 'ミルキー', 'ラメ', 'フラッシュ', 'マグネット', 'パール', 'メタリック', 'ホロ'];
+  const tagsOf = s => String(s || '').split(/[,、]\s*/).map(t => t.trim()).filter(Boolean);
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const configured = () => !!cfg.API_URL;
   const norm = r => ({ ...r, id: String(r.id), low: r.low === true || r.low === 'TRUE' });
@@ -70,6 +74,8 @@ const ND = (() => {
         <label>購入先<input name="shop" value="${esc(v.shop)}"></label>
         <label>商品番号<input name="sku" value="${esc(v.sku)}" inputmode="text" autocomplete="off"></label>
         <label>メモ<input name="note" value="${esc(v.note)}"></label>
+        <fieldset class="nd-tags"><legend>色タグ</legend>${chips('colortag', colorTags, tagsOf(v.colortag))}</fieldset>
+        <fieldset class="nd-tags"><legend>質感タグ</legend>${chips('texture', textureTags, tagsOf(v.texture))}</fieldset>
         <label>写真（任意）<input type="file" id="nd-file" accept="image/*"></label>
         <p class="note" id="nd-status" style="margin:4px 0 0"></p>
         <input type="hidden" name="photo" value="${esc(v.photo)}">
@@ -80,8 +86,11 @@ const ND = (() => {
     dlg.querySelector('#nd-cancel').onclick = () => dlg.close();
     dlg.querySelector('#nd-form').onsubmit = async e => {
       e.preventDefault();
-      const f = Object.fromEntries(new FormData(e.target));
+      const fd = new FormData(e.target);
+      const f = Object.fromEntries(fd);
       Object.keys(f).forEach(k => f[k] = f[k].trim());
+      f.colortag = fd.getAll('colortag').join(', ');
+      f.texture = fd.getAll('texture').join(', ');
       const file = dlg.querySelector('#nd-file').files[0];
       try {
         if (file) {
@@ -96,6 +105,11 @@ const ND = (() => {
       }
     };
     dlg.showModal();
+  }
+
+  // タグを選ぶチェックボックス（押すと色が付く小さな札）
+  function chips(name, all, on) {
+    return all.map(t => `<label class="nd-chip"><input type="checkbox" name="${name}" value="${esc(t)}"${on.includes(t) ? ' checked' : ''}><span>${esc(t)}</span></label>`).join('');
   }
 
   // 「designs」列（例: "harvard, other"）を配列にする
@@ -173,5 +187,5 @@ const ND = (() => {
     return res.url;
   }
 
-  return { cfg, configured, esc, categories, list, send, openEditor, designsOf, lightbox, uploadPhoto, photoDataUrl, copyText };
+  return { cfg, configured, esc, categories, colorTags, textureTags, tagsOf, list, send, openEditor, designsOf, lightbox, uploadPhoto, photoDataUrl, copyText };
 })();

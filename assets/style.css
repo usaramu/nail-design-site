@@ -231,6 +231,18 @@ dialog button[type=submit]:hover { background: #5c1620; }
 .lowbox h2 { border: 0; padding: 0; margin: 0 0 8px; font-size: 1rem; }
 .lowbox ul { margin: 0; padding-left: 18px; font-size: .9rem; line-height: 1.9; }
 
+/* タグを選ぶ札（編集画面） */
+.nd-tags { border: 0; padding: 0; margin: 14px 0 0; }
+.nd-tags legend { font-size: .83rem; color: var(--muted); padding: 0; margin-bottom: 6px; }
+dialog label.nd-chip { display: inline-block; margin: 0 6px 6px 0; }
+.nd-chip input { position: absolute; opacity: 0; width: 0; height: 0; }
+.nd-chip span {
+  display: inline-block; font-size: .76rem; padding: 3px 10px;
+  border: 1px solid var(--line); border-radius: 999px; color: var(--ink); background: var(--surface); cursor: pointer;
+}
+.nd-chip input:checked + span { background: var(--bordeaux); border-color: var(--bordeaux); color: #fff; }
+.nd-chip input:focus-visible + span { outline: 1px solid var(--gold); outline-offset: 2px; }
+
 /* 指示プロンプト */
 .prompt pre {
   white-space: pre-wrap;

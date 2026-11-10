@@ -4,14 +4,23 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>指示プロンプト</title>
-  <link rel="stylesheet" href="../assets/style.css?v=202611101708">
+  <link rel="stylesheet" href="../assets/style.css?v=202611101742">
   <style>
-    .prompt pre { white-space: pre-wrap; word-break: break-word; font-family: inherit; font-size: .85rem; line-height: 1.6; background: #faf6f1; border-radius: 6px; padding: 10px; margin: 8px 0 0; max-height: 9em; overflow: hidden; position: relative; }
-    .prompt.open pre { max-height: none; }
-    .prompt h3 { margin: 0; font-size: 1rem; }
-    .prompt .actions { margin-top: 8px; }
-    .more { font-size: .8rem; color: #7a1f2b; background: none; border: 0; padding: 4px 0; }
-    .grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    /* タイトルだけの一覧。タップで本文とボタンが開く */
+    #list { border-bottom: 1px solid var(--line); }
+    .prompt { padding: 0; }
+    .prompt .ttl {
+      display: flex; width: 100%; align-items: center; gap: 10px; text-align: left;
+      border: 0; border-radius: 0; background: transparent; color: var(--ink);
+      padding: 15px 2px; font-family: var(--serif); font-weight: 700; font-size: 1rem; letter-spacing: .03em;
+    }
+    .prompt .ttl:hover { background: transparent; color: var(--bordeaux); }
+    .prompt .ttl span { flex: 1; }
+    .prompt .ttl::after { content: '＋'; font-family: var(--sans); font-weight: 300; color: var(--muted); }
+    .prompt.open .ttl::after { content: '－'; }
+    .prompt .body { display: none; padding: 0 0 18px; }
+    .prompt.open .body { display: block; }
+    .prompt.open pre { max-height: none; margin-top: 0; }
   </style>
 </head>
 <body>
@@ -19,11 +28,11 @@
   <h1>指示プロンプト</h1>
   <p><button id="add">＋ プロンプトを追加</button></p>
 
-  <div class="grid" id="list"></div>
+  <div id="list"></div>
   <p id="msg" class="note"></p>
 
-  <script src="../assets/config.js?v=202611101708"></script>
-  <script src="../assets/app.js?v=202611101708"></script>
+  <script src="../assets/config.js?v=202611101742"></script>
+  <script src="../assets/app.js?v=202611101742"></script>
   <script>
     const $ = s => document.querySelector(s);
     let prompts = [];
@@ -44,14 +53,15 @@
     function render() {
       $('#list').innerHTML = prompts.length
         ? prompts.map(p => `
-            <div class="card prompt" data-id="${ND.esc(p.id)}">
-              <h3>${ND.esc(p.title || '（無題）')}</h3>
-              <pre>${ND.esc(p.body)}</pre>
-              <button class="more" data-act="more">▼ 全文を表示</button>
-              <div class="actions">
-                <button data-act="copy">全文コピー</button>
-                <button data-act="edit">編集</button>
-                <button data-act="delete">削除</button>
+            <div class="prompt" data-id="${ND.esc(p.id)}">
+              <button type="button" class="ttl" data-act="toggle"><span>${ND.esc(p.title || '（無題）')}</span></button>
+              <div class="body">
+                <pre>${ND.esc(p.body)}</pre>
+                <div class="actions">
+                  <button data-act="copy">全文コピー</button>
+                  <button data-act="edit">編集</button>
+                  <button data-act="delete">削除</button>
+                </div>
               </div>
             </div>`).join('')
         : '<p class="empty">まだありません。</p>';
@@ -65,9 +75,8 @@
       const p = prompts.find(x => x.id === card.dataset.id);
       if (!p) return;
 
-      if (b.dataset.act === 'more') {
-        const open = card.classList.toggle('open');
-        b.textContent = open ? '▲ 折りたたむ' : '▼ 全文を表示';
+      if (b.dataset.act === 'toggle') {
+        card.classList.toggle('open');
         return;
       }
       if (b.dataset.act === 'copy') {

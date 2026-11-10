@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>持ち物リスト</title>
-  <link rel="stylesheet" href="../assets/style.css?v=202611101708">
+  <link rel="stylesheet" href="../assets/style.css?v=202611101742">
   <style>
     /* スマホで横に2つ並ぶ小さめのカード */
-    #list.grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 22px 14px; }
+    #list .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 22px 14px; }
     #list .card { text-align: center; padding-top: 14px; }
 
     /* ジェル・パーツ：丸い写真が主役。写真がないときは点線の丸 */
@@ -35,6 +35,32 @@
     #list .meta { font-size: .72rem; line-height: 1.7; }
     #list .actions { justify-content: center; gap: 5px; margin-top: 10px; }
     #list .actions button { font-size: .68rem; padding: 3px 7px; }
+
+    /* 検索とタグの絞り込み */
+    .finder { margin: 14px 0 6px; }
+    .finder input[type=search] {
+      width: 100%; padding: 9px 12px; font: inherit; font-size: .9rem; color: var(--ink);
+      border: 1px solid var(--line); border-radius: 2px; background: var(--surface);
+    }
+    .finder input[type=search]:focus { outline: none; border-color: var(--gold); }
+    .tagfilter { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .tagfilter button, .tagfilter .sep {
+      font-size: .72rem; padding: 2px 10px; border-radius: 999px;
+      border: 1px solid var(--line); color: var(--ink); background: var(--surface);
+    }
+    .tagfilter button:hover { background: var(--surface); color: var(--bordeaux); }
+    .tagfilter button.on { background: var(--bordeaux); border-color: var(--bordeaux); color: #fff; }
+    .tagfilter .sep { border: 0; background: transparent; color: var(--muted); padding: 2px 2px 2px 6px; }
+
+    /* カテゴリの見出し */
+    #list section + section { margin-top: 8px; }
+    #list h2.cat { display: flex; align-items: baseline; gap: 8px; }
+    #list h2.cat small { font-family: var(--sans); font-weight: 300; font-size: .78rem; color: var(--muted); }
+
+    /* カードのタグ */
+    #list .tags { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin: 6px 0 2px; }
+    #list .tags span { font-size: .64rem; line-height: 1.5; padding: 0 7px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); }
+    #list .tags span.c { border-color: var(--gold); color: var(--ink); }
   </style>
 </head>
 <body>
@@ -42,16 +68,23 @@
   <h1>持ち物リスト</h1>
 
   <div class="tabs" id="tabs"></div>
+  <div class="finder">
+    <input id="q" type="search" placeholder="名前・色番号・商品番号で検索" autocomplete="off">
+    <div class="tagfilter" id="tagfilter"></div>
+  </div>
   <p><button id="add">＋ 持ち物を追加</button></p>
-  <div class="grid" id="list"></div>
+  <div id="list"></div>
   <p id="msg" class="note"></p>
 
-  <script src="../assets/config.js?v=202611101708"></script>
-  <script src="../assets/app.js?v=202611101708"></script>
+  <script src="../assets/config.js?v=202611101742"></script>
+  <script src="../assets/app.js?v=202611101742"></script>
   <script>
     const $ = s => document.querySelector(s);
     let items = [];
     let filter = 'all';
+    let query = '';
+    const picked = new Set(); // 絞り込み中のタグ
+    const tagsOfItem = i => [...ND.tagsOf(i.colortag), ...ND.tagsOf(i.texture)];
 
     async function reload() {
       if (!ND.configured()) {
@@ -80,9 +113,29 @@
       if (filter === 'low') view = mine.filter(i => i.low);
       else if (filter !== 'all') view = mine.filter(i => i.category === filter);
 
-      $('#list').innerHTML = view.length
-        ? view.map(card).join('')
-        : '<p class="empty">まだありません。</p>';
+      // タグの絞り込み札（今の一覧にあるタグだけ出す）
+      const present = new Set(view.flatMap(tagsOfItem));
+      const colors = ND.colorTags.filter(t => present.has(t) || picked.has(t));
+      const textures = ND.textureTags.filter(t => present.has(t) || picked.has(t));
+      const chip = t => `<button type="button" data-tag="${ND.esc(t)}" class="${picked.has(t) ? 'on' : ''}">${ND.esc(t)}</button>`;
+      $('#tagfilter').innerHTML =
+        (colors.length ? '<span class="sep">色</span>' + colors.map(chip).join('') : '') +
+        (textures.length ? '<span class="sep">質感</span>' + textures.map(chip).join('') : '');
+
+      // 検索とタグで絞る
+      const q = query.trim().toLowerCase();
+      if (q) view = view.filter(i => [i.name, i.color, i.sku, i.shop, i.note, i.category, i.colortag, i.texture]
+        .some(v => String(v ?? '').toLowerCase().includes(q)));
+      if (picked.size) view = view.filter(i => { const t = tagsOfItem(i); return [...picked].every(p => t.includes(p)); });
+
+      // カテゴリごとに見出しで区切る
+      const cats = ND.categories.filter(c => filter === 'all' || filter === 'low' || filter === c);
+      const html = cats.map(c => {
+        const list = view.filter(i => i.category === c);
+        if (!list.length) return '';
+        return `<section><h2 class="cat">${ND.esc(c)}<small>${list.length}</small></h2><div class="grid">${list.map(card).join('')}</div></section>`;
+      }).join('');
+      $('#list').innerHTML = html || '<p class="empty">見つかりません。</p>';
     }
 
     const photoSrc = p => /^(https?:|data:)/.test(p) ? p : '../' + p;
@@ -105,6 +158,7 @@
         <div class="card">
           ${head}
           <h3>${name}${i.low ? '<span class="badge-inline">少なめ</span>' : ''}</h3>
+          ${tagsOfItem(i).length ? `<div class="tags">${ND.tagsOf(i.colortag).map(t => `<span class="c">${ND.esc(t)}</span>`).join('')}${ND.tagsOf(i.texture).map(t => `<span>${ND.esc(t)}</span>`).join('')}</div>` : ''}
           <div class="meta">${[i.color, i.size, i.shop, i.sku ? '商品番号 ' + i.sku : ''].filter(Boolean).map(ND.esc).join('<br>')}</div>
           <div class="actions">
             <button data-act="low" data-id="${id}">${i.low ? '少なめ解除' : '少なめ'}</button>
@@ -114,6 +168,14 @@
           </div>
         </div>`;
     }
+
+    $('#q').addEventListener('input', e => { query = e.target.value; render(); });
+    $('#tagfilter').addEventListener('click', e => {
+      const t = e.target.closest('button[data-tag]')?.dataset.tag;
+      if (!t) return;
+      picked.has(t) ? picked.delete(t) : picked.add(t);
+      render();
+    });
 
     $('#tabs').addEventListener('click', e => {
       const k = e.target.closest('button')?.dataset.k;
