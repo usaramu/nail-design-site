@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#fbf7f6">
   <title>持ち物リスト</title>
-  <link rel="stylesheet" href="../assets/style.css?v=202611101904">
+  <link rel="stylesheet" href="../assets/style.css?v=202611101905">
   <style>
     /* 明るい下地。下のボタンで切り替え、タップで詳細シート */
     :root {
@@ -55,7 +55,7 @@
 
     /* ジェル：ネイルチップ形の色見本を、色の系統ごとに並べる */
     .tips { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 16px 10px; }
-    .tip { padding: 0; border: 0; background: transparent; color: var(--ink); text-align: center; position: relative; border-radius: 0; }
+    .tip { min-width: 0; padding: 0; border: 0; background: transparent; color: var(--ink); text-align: center; position: relative; border-radius: 0; }
     .tip:hover { background: transparent; color: var(--ink); }
     .tip .shape {
       display: block; width: 62px; height: 62px; margin: 4px auto 8px;
@@ -72,10 +72,10 @@
 
     /* パーツ：仕切りのあるパーツケースのように */
     .tray {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
+      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px;
       background: var(--line); border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
     }
-    .cell { padding: 12px 8px 10px; border: 0; border-radius: 0; background: var(--surface); color: var(--ink); text-align: center; position: relative; }
+    .cell { min-width: 0; padding: 12px 8px 10px; border: 0; border-radius: 0; background: var(--surface); color: var(--ink); text-align: center; position: relative; }
     .cell:hover { background: var(--paper); color: var(--ink); }
     .cell .sq { display: block; width: 100%; aspect-ratio: 1 / 1; border-radius: 10px; object-fit: cover; background: var(--paper); margin-bottom: 8px; border: 1px dashed var(--gold); }
     .cell img.sq { border: 0; }
@@ -170,8 +170,8 @@
   <button class="add" id="add" aria-label="持ち物を追加">＋</button>
   <nav class="dock" id="dock"></nav>
 
-  <script src="../assets/config.js?v=202611101904"></script>
-  <script src="../assets/app.js?v=202611101904"></script>
+  <script src="../assets/config.js?v=202611101905"></script>
+  <script src="../assets/app.js?v=202611101905"></script>
   <script>
     const $ = s => document.querySelector(s);
     let items = [];
