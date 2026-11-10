@@ -67,7 +67,8 @@ const ND = (() => {
     dlg.innerHTML = `
       <form id="nd-form">
         <h3>${item ? '編集' : '追加'}</h3>
-        <label>名前<input name="name" required value="${esc(v.name)}"></label>
+        <label>名前（短く）<input name="name" required value="${esc(v.name)}"></label>
+        <label>正式な商品名<input name="fullname" value="${esc(v.fullname)}"></label>
         <label>カテゴリ<select name="category">${categories.map(c => `<option${v.category === c ? ' selected' : ''}>${c}</option>`).join('')}</select></label>
         <label>色・番号<input name="color" value="${esc(v.color)}"></label>
         <label>サイズ・容量<input name="size" value="${esc(v.size)}"></label>
