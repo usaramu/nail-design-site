@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>デザイン一覧</title>
-  <link rel="stylesheet" href="../assets/style.css?v=202611102009">
+  <link rel="stylesheet" href="../assets/style.css?v=202611102011">
   <style>
     .design { border-top: 1px solid var(--line); padding: 14px 0 0; margin-bottom: 8px; }
     .design > summary {
@@ -108,8 +108,8 @@
 
   <p id="msg" class="note"></p>
 
-  <script src="../assets/config.js?v=202611102009"></script>
-  <script src="../assets/app.js?v=202611102009"></script>
+  <script src="../assets/config.js?v=202611102011"></script>
+  <script src="../assets/app.js?v=202611102011"></script>
   <script>
     const $ = s => document.querySelector(s);
     let items = [];
@@ -156,9 +156,21 @@
     }
 
     // 枠ごとの画像URL：差し替えたもの → 既定の画像 の順
+    // 大きな画像は 45,000 文字ずつ「STEP2A#0, #1…」に分けて保存し、本体には「chunks:個数」を入れる
     function imageFor(key, slot) {
       const hit = images.find(x => x.design === key && x.slot === slot);
-      if (hit && hit.url) return hit.url;
+      const url = hit ? String(hit.url ?? '') : '';
+      if (url.startsWith('chunks:')) {
+        const n = parseInt(url.slice(7), 10);
+        const parts = [];
+        for (let k = 0; k < n; k++) {
+          const c = images.find(x => x.design === key && x.slot === `${slot}#${k}`);
+          if (!c) return '';
+          parts.push(String(c.url));
+        }
+        return parts.join('');
+      }
+      if (url) return url;
       const d = DESIGNS[key];
       return d && d.defaults && d.defaults[slot] ? d.defaults[slot] : '';
     }
@@ -181,7 +193,7 @@
       }
       $('#list').innerHTML = keys.map(key => {
         const d = DESIGNS[key] || { name: key };
-        const need = items.filter(i => ND.designsOf(i).includes(key));
+        const need = items.filter(i => i.status !== '削除' && ND.designsOf(i).includes(key));
         const have = need.filter(i => i.status === '持ち物');
         const src = imageFor(key, SLOTS[0].slot);
         const pct = need.length ? Math.round(have.length / need.length * 100) : 0;
@@ -219,7 +231,7 @@
       const opt = i => `<button type="button" class="opt${sel.has(i.id) ? ' on' : ''}" data-id="${ND.esc(i.id)}" aria-pressed="${sel.has(i.id)}">
           ${ph(i)}<span class="ck">✓</span><span class="nm">${ND.esc(i.name)}</span></button>`;
       const section = c => {
-        const list = items.filter(i => i.category === c);
+        const list = items.filter(i => i.category === c && i.status !== '削除');
         list.sort((a, b) => (a.status === '持ち物' ? 0 : 1) - (b.status === '持ち物' ? 0 : 1));
         return list.length ? `<h4>${c}</h4><div class="grid2">${list.map(opt).join('')}</div>` : '';
       };

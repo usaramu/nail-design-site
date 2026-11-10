@@ -121,10 +121,17 @@ const ND = (() => {
         <p class="note" id="nd-status" style="margin:4px 0 0"></p>
         <input type="hidden" name="photo" value="${esc(v.photo)}">
         </div>
+        ${item && opts.onDelete ? '<div class="form-del"><button type="button" id="nd-delete">この持ち物を削除</button></div>' : ''}
         <div class="form-foot"><button type="button" id="nd-cancel">キャンセル</button><button type="submit">保存</button></div>
       </form>`;
     document.body.appendChild(dlg);
     dlg.querySelector('#nd-cancel').onclick = () => dlg.close();
+    const del = dlg.querySelector('#nd-delete');
+    if (del) del.onclick = () => {
+      if (!confirm(`「${v.name}」を削除しますか？`)) return;
+      dlg.close();
+      opts.onDelete();
+    };
     // パーツのときは「種類」、それ以外は「色タグ・質感タグ」を出す
     const catSel = dlg.querySelector('select[name=category]');
     const showTags = () => dlg.querySelectorAll('.nd-tags').forEach(fs => {
@@ -229,6 +236,28 @@ const ND = (() => {
       img.src = URL.createObjectURL(file);
     });
   }
+  // 指示画像など大きめの画像用（長辺 maxSide px の JPEG）
+  async function imageData(file, maxSide = 1400, quality = .8) {
+    const img = await loadImage(file);
+    const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+    const c = document.createElement('canvas');
+    c.width = Math.round(img.width * scale);
+    c.height = Math.round(img.height * scale);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    URL.revokeObjectURL(img.src);
+    return c.toDataURL('image/jpeg', quality);
+  }
+
+  // 持ち物を削除する（表からは消さず「削除」の印を付け、どこにも出さない）
+  function removeItem(item, refresh) {
+    item.status = '削除';
+    item.designs = '';
+    later(async () => {
+      await send('setStatus', { id: item.id, status: '削除' });
+      await send('update', { id: item.id, fields: { designs: '' } });
+    }, refresh);
+  }
+
   async function photoDataUrl(file) {
     const img = await loadImage(file);
     const steps = [[560, .78], [480, .74], [400, .7], [320, .68], [260, .62], [200, .6]];
@@ -258,5 +287,5 @@ const ND = (() => {
     return res.url;
   }
 
-  return { cfg, configured, esc, later, categories, colorTags, textureTags, partTypes, tagsOf, inventoryText, list, listFast, send, openEditor, designsOf, lightbox, uploadPhoto, photoDataUrl, copyText };
+  return { cfg, configured, esc, later, categories, colorTags, textureTags, partTypes, tagsOf, inventoryText, list, listFast, send, openEditor, designsOf, lightbox, uploadPhoto, photoDataUrl, imageData, removeItem, copyText };
 })();
