@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>購入リスト</title>
-  <link rel="stylesheet" href="../assets/style.css?v=202611091502">
+  <link rel="stylesheet" href="../assets/style.css?v=202611101708">
 </head>
 <body>
   <p><a href="../index.html">← 一覧へ戻る</a> ／ <a href="index.html">持ち物リストへ</a> ／ <a href="../designs/index.html">デザイン一覧</a></p>
@@ -15,8 +15,8 @@
   <div id="list"></div>
   <p id="msg" class="note"></p>
 
-  <script src="../assets/config.js?v=202611091502"></script>
-  <script src="../assets/app.js?v=202611091502"></script>
+  <script src="../assets/config.js?v=202611101708"></script>
+  <script src="../assets/app.js?v=202611101708"></script>
   <script>
     const $ = s => document.querySelector(s);
     let items = [];
@@ -42,7 +42,7 @@
             <div class="row lowrow">
               <span>
                 <strong>${ND.esc(i.name)}</strong>
-                <small>${ND.esc([i.color, i.size, i.shop].filter(Boolean).join(' ／ '))}</small>
+                <small>${ND.esc([i.color, i.size, i.shop, i.sku ? '商品番号 ' + i.sku : ''].filter(Boolean).join(' ／ '))}</small>
               </span>
               <button data-restock="${ND.esc(i.id)}">購入リストに入れる</button>
             </div>`).join('')
@@ -58,7 +58,7 @@
             <input type="checkbox" data-check="${ND.esc(i.id)}" title="持ち物に移動">
             <span>
               <strong>${ND.esc(i.name)}</strong>${i.low ? ' <span class="badge-inline">少なめ</span>' : ''}
-              <small>${ND.esc([i.color, i.size, i.shop, i.note].filter(Boolean).join(' ／ '))}</small>
+              <small>${ND.esc([i.color, i.size, i.shop, i.sku ? '商品番号 ' + i.sku : '', i.note].filter(Boolean).join(' ／ '))}</small>
             </span>
             <button data-edit="${ND.esc(i.id)}">編集</button>
           </div>`).join('');

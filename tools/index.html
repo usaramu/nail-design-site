@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>持ち物リスト</title>
-  <link rel="stylesheet" href="../assets/style.css?v=202611091502">
+  <link rel="stylesheet" href="../assets/style.css?v=202611101708">
   <style>
     /* スマホで横に2つ並ぶ小さめのカード */
     #list.grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 22px 14px; }
@@ -46,8 +46,8 @@
   <div class="grid" id="list"></div>
   <p id="msg" class="note"></p>
 
-  <script src="../assets/config.js?v=202611091502"></script>
-  <script src="../assets/app.js?v=202611091502"></script>
+  <script src="../assets/config.js?v=202611101708"></script>
+  <script src="../assets/app.js?v=202611101708"></script>
   <script>
     const $ = s => document.querySelector(s);
     let items = [];
@@ -105,7 +105,7 @@
         <div class="card">
           ${head}
           <h3>${name}${i.low ? '<span class="badge-inline">少なめ</span>' : ''}</h3>
-          <div class="meta">${[i.color, i.size, i.shop].filter(Boolean).map(ND.esc).join('<br>')}</div>
+          <div class="meta">${[i.color, i.size, i.shop, i.sku ? '商品番号 ' + i.sku : ''].filter(Boolean).map(ND.esc).join('<br>')}</div>
           <div class="actions">
             <button data-act="low" data-id="${id}">${i.low ? '少なめ解除' : '少なめ'}</button>
             ${round && i.photo ? `<button data-act="pick" data-id="${id}">写真</button>` : ''}

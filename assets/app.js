@@ -68,6 +68,7 @@ const ND = (() => {
         <label>色・番号<input name="color" value="${esc(v.color)}"></label>
         <label>サイズ・容量<input name="size" value="${esc(v.size)}"></label>
         <label>購入先<input name="shop" value="${esc(v.shop)}"></label>
+        <label>商品番号<input name="sku" value="${esc(v.sku)}" inputmode="text" autocomplete="off"></label>
         <label>メモ<input name="note" value="${esc(v.note)}"></label>
         <label>写真（任意）<input type="file" id="nd-file" accept="image/*"></label>
         <p class="note" id="nd-status" style="margin:4px 0 0"></p>
