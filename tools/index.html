@@ -4,37 +4,39 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>持ち物リスト</title>
-  <link rel="stylesheet" href="../assets/style.css?v=202611101742">
+  <link rel="stylesheet" href="../assets/style.css?v=202611101751">
   <style>
-    /* スマホで横に2つ並ぶ小さめのカード */
-    #list .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 22px 14px; }
-    #list .card { text-align: center; padding-top: 14px; }
+    /* ジェル・パーツ：丸い写真と名前だけの小さな札。タップで詳細 */
+    .minigrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 18px 10px; margin: 6px 0 4px; }
+    .mini {
+      display: block; width: 100%; padding: 0; border: 0; border-radius: 0;
+      background: transparent; color: var(--ink); text-align: center; position: relative;
+    }
+    .mini:hover { background: transparent; color: var(--bordeaux); }
+    .mini .ph {
+      width: 66px; height: 66px; margin: 4px auto 8px; border-radius: 50%; display: block;
+      border: 1px dashed var(--gold); background: var(--surface);
+    }
+    .mini img.ph { border: 1px solid var(--line); outline: 1px solid var(--gold); outline-offset: 3px; object-fit: cover; }
+    .mini .nm {
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+      font-size: .74rem; line-height: 1.5; font-weight: 400;
+    }
+    /* 少なめ：丸の右上に小さなボルドーの点 */
+    .mini .dot { position: absolute; top: 2px; left: calc(50% + 22px); width: 10px; height: 10px; border-radius: 50%; background: var(--bordeaux); border: 2px solid var(--paper); }
 
-    /* ジェル・パーツ：丸い写真が主役。写真がないときは点線の丸 */
-    .circle {
-      width: 92px; height: 92px; aspect-ratio: 1 / 1;
-      border-radius: 50%; display: block; margin: 6px auto 14px;
+    /* ツール・基本用品：箇条書き。タップで詳細 */
+    .plain { list-style: none; margin: 0; padding: 0; }
+    .plain li { border-bottom: 1px solid var(--line); }
+    .plain li:first-child { border-top: 1px solid var(--line); }
+    .plain button {
+      display: flex; width: 100%; align-items: center; gap: 10px; text-align: left;
+      border: 0; border-radius: 0; background: transparent; color: var(--ink);
+      padding: 11px 2px; font-size: .9rem; font-weight: 300;
     }
-    #list .card img.circle {
-      width: 92px; height: 92px; aspect-ratio: 1 / 1; border-radius: 50%;
-      margin: 6px auto 14px; object-fit: cover; border: 1px solid var(--line);
-      outline: 1px solid var(--gold); outline-offset: 3px; cursor: zoom-in;
-    }
-    button.circle {
-      padding: 0; border: 1px dashed var(--gold); background: var(--surface);
-      color: var(--muted); font-size: .72rem;
-    }
-    button.circle:hover { background: var(--surface); color: var(--bordeaux); }
-
-    #list .card > img.zoom:not(.circle) { margin-bottom: 10px; }
-    #list .card h3 {
-      font-family: var(--sans); font-weight: 400; font-size: .84rem;
-      letter-spacing: 0; line-height: 1.6; margin: 0 0 4px; color: var(--ink);
-    }
-    #list .card .badge-inline { margin-left: 4px; font-size: .66rem; white-space: nowrap; }
-    #list .meta { font-size: .72rem; line-height: 1.7; }
-    #list .actions { justify-content: center; gap: 5px; margin-top: 10px; }
-    #list .actions button { font-size: .68rem; padding: 3px 7px; }
+    .plain button::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
+    .plain button:hover { background: transparent; color: var(--bordeaux); }
+    .plain button .nm { flex: 1; }
 
     /* 検索とタグの絞り込み */
     .finder { margin: 14px 0 6px; }
@@ -53,14 +55,25 @@
     .tagfilter .sep { border: 0; background: transparent; color: var(--muted); padding: 2px 2px 2px 6px; }
 
     /* カテゴリの見出し */
-    #list section + section { margin-top: 8px; }
-    #list h2.cat { display: flex; align-items: baseline; gap: 8px; }
+    #list h2.cat { display: flex; align-items: baseline; gap: 8px; margin-top: 28px; }
     #list h2.cat small { font-family: var(--sans); font-weight: 300; font-size: .78rem; color: var(--muted); }
 
-    /* カードのタグ */
-    #list .tags { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin: 6px 0 2px; }
-    #list .tags span { font-size: .64rem; line-height: 1.5; padding: 0 7px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); }
-    #list .tags span.c { border-color: var(--gold); color: var(--ink); }
+    /* 詳細（タップで開く） */
+    #dt { width: min(92vw, 420px); text-align: center; }
+    #dt .big { width: 150px; height: 150px; border-radius: 50%; object-fit: cover; display: block; margin: 8px auto 16px;
+      border: 1px solid var(--line); outline: 1px solid var(--gold); outline-offset: 4px; cursor: zoom-in; }
+    #dt .bigempty { width: 150px; height: 150px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 8px auto 16px;
+      border: 1px dashed var(--gold); background: var(--surface); color: var(--muted); font-size: .8rem; }
+    #dt .bigempty:hover { background: var(--surface); color: var(--bordeaux); }
+    #dt .wide { width: 100%; border: 1px solid var(--line); margin: 4px 0 14px; display: block; cursor: zoom-in; }
+    #dt h3 { margin: 0 0 8px; }
+    #dt .tags { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin: 0 0 12px; }
+    #dt .tags span { font-size: .7rem; padding: 0 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); }
+    #dt .tags span.c { border-color: var(--gold); color: var(--ink); }
+    #dt dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; text-align: left; font-size: .84rem; margin: 0 0 6px; }
+    #dt dt { color: var(--muted); }
+    #dt dd { margin: 0; word-break: break-all; }
+    #dt .actions { justify-content: center; }
   </style>
 </head>
 <body>
@@ -76,8 +89,8 @@
   <div id="list"></div>
   <p id="msg" class="note"></p>
 
-  <script src="../assets/config.js?v=202611101742"></script>
-  <script src="../assets/app.js?v=202611101742"></script>
+  <script src="../assets/config.js?v=202611101751"></script>
+  <script src="../assets/app.js?v=202611101751"></script>
   <script>
     const $ = s => document.querySelector(s);
     let items = [];
@@ -85,6 +98,8 @@
     let query = '';
     const picked = new Set(); // 絞り込み中のタグ
     const tagsOfItem = i => [...ND.tagsOf(i.colortag), ...ND.tagsOf(i.texture)];
+    const isRound = i => i.category === 'ジェル' || i.category === 'パーツ';
+    const photoSrc = p => /^(https?:|data:)/.test(p) ? p : '../' + p;
 
     async function reload() {
       if (!ND.configured()) {
@@ -128,45 +143,104 @@
         .some(v => String(v ?? '').toLowerCase().includes(q)));
       if (picked.size) view = view.filter(i => { const t = tagsOfItem(i); return [...picked].every(p => t.includes(p)); });
 
-      // カテゴリごとに見出しで区切る
+      // カテゴリごとに見出しで区切る。ジェル・パーツは丸い札、ほかは箇条書き
       const cats = ND.categories.filter(c => filter === 'all' || filter === 'low' || filter === c);
       const html = cats.map(c => {
         const list = view.filter(i => i.category === c);
         if (!list.length) return '';
-        return `<section><h2 class="cat">${ND.esc(c)}<small>${list.length}</small></h2><div class="grid">${list.map(card).join('')}</div></section>`;
+        const body = (c === 'ジェル' || c === 'パーツ')
+          ? `<div class="minigrid">${list.map(mini).join('')}</div>`
+          : `<ul class="plain">${list.map(row).join('')}</ul>`;
+        return `<section><h2 class="cat">${ND.esc(c)}<small>${list.length}</small></h2>${body}</section>`;
       }).join('');
       $('#list').innerHTML = html || '<p class="empty">見つかりません。</p>';
     }
 
-    const photoSrc = p => /^(https?:|data:)/.test(p) ? p : '../' + p;
-
-    function card(i) {
-      const id = ND.esc(i.id);
+    function mini(i) {
       const name = ND.esc(i.name);
-      const round = i.category === 'ジェル' || i.category === 'パーツ';
-      let head;
-      if (round) {
-        // 写真があれば丸い写真、なければ押して写真を入れる点線の丸
-        head = (i.photo
-          ? `<img class="circle zoom" src="${ND.esc(photoSrc(i.photo))}" alt="${name}" title="タップで拡大">`
-          : `<button type="button" class="circle" data-act="pick" data-id="${id}">写真</button>`)
-          + `<input type="file" accept="image/*" data-id="${id}" hidden>`;
-      } else {
-        head = i.photo ? `<img src="${ND.esc(photoSrc(i.photo))}" alt="${name}" loading="lazy" class="zoom" title="タップで拡大">` : '';
-      }
       return `
-        <div class="card">
-          ${head}
-          <h3>${name}${i.low ? '<span class="badge-inline">少なめ</span>' : ''}</h3>
-          ${tagsOfItem(i).length ? `<div class="tags">${ND.tagsOf(i.colortag).map(t => `<span class="c">${ND.esc(t)}</span>`).join('')}${ND.tagsOf(i.texture).map(t => `<span>${ND.esc(t)}</span>`).join('')}</div>` : ''}
-          <div class="meta">${[i.color, i.size, i.shop, i.sku ? '商品番号 ' + i.sku : ''].filter(Boolean).map(ND.esc).join('<br>')}</div>
-          <div class="actions">
-            <button data-act="low" data-id="${id}">${i.low ? '少なめ解除' : '少なめ'}</button>
-            ${round && i.photo ? `<button data-act="pick" data-id="${id}">写真</button>` : ''}
-            <button data-act="edit" data-id="${id}">編集</button>
-            <button data-act="back" data-id="${id}">購入リストへ</button>
-          </div>
-        </div>`;
+        <button type="button" class="mini" data-id="${ND.esc(i.id)}" aria-label="${name}">
+          ${i.photo ? `<img class="ph" src="${ND.esc(photoSrc(i.photo))}" alt="" loading="lazy">` : '<span class="ph"></span>'}
+          ${i.low ? '<span class="dot" title="少なめ"></span>' : ''}
+          <span class="nm">${name}</span>
+        </button>`;
+    }
+
+    function row(i) {
+      return `<li><button type="button" data-id="${ND.esc(i.id)}"><span class="nm">${ND.esc(i.name)}</span>${i.low ? '<span class="badge-inline">少なめ</span>' : ''}</button></li>`;
+    }
+
+    // 詳細（写真・タグ・色番号などと、操作ボタン）
+    function openDetail(i) {
+      document.querySelector('#dt')?.remove();
+      const name = ND.esc(i.name);
+      const round = isRound(i);
+      let photo;
+      if (round) photo = i.photo
+        ? `<img class="big" src="${ND.esc(photoSrc(i.photo))}" alt="${name}">`
+        : `<button type="button" class="bigempty" data-act="pick">写真を入れる</button>`;
+      else photo = i.photo ? `<img class="wide" src="${ND.esc(photoSrc(i.photo))}" alt="${name}">` : '';
+      const rows = [['色・番号', i.color], ['サイズ', i.size], ['購入先', i.shop], ['商品番号', i.sku], ['メモ', i.note]]
+        .filter(([, v]) => v !== '' && v != null)
+        .map(([k, v]) => `<dt>${k}</dt><dd>${ND.esc(v)}</dd>`).join('');
+      const d = document.createElement('dialog');
+      d.id = 'dt';
+      d.innerHTML = `
+        ${photo}
+        <h3>${name}${i.low ? '<span class="badge-inline">少なめ</span>' : ''}</h3>
+        ${tagsOfItem(i).length ? `<div class="tags">${ND.tagsOf(i.colortag).map(t => `<span class="c">${ND.esc(t)}</span>`).join('')}${ND.tagsOf(i.texture).map(t => `<span>${ND.esc(t)}</span>`).join('')}</div>` : ''}
+        ${rows ? `<dl>${rows}</dl>` : ''}
+        <div class="actions">
+          <button type="button" data-act="low">${i.low ? '少なめを解除' : '少なめにする'}</button>
+          <button type="button" data-act="pick">写真を${i.photo ? '変える' : '入れる'}</button>
+          <button type="button" data-act="edit">編集</button>
+          <button type="button" data-act="back">購入リストへ戻す</button>
+        </div>
+        <div class="btns"><button type="button" data-act="close">閉じる</button></div>
+        <input type="file" accept="image/*" hidden>`;
+      document.body.appendChild(d);
+
+      d.addEventListener('click', async e => {
+        if (e.target === d) return d.close();             // 外側をタップで閉じる
+        if (e.target.matches('img.big, img.wide')) return ND.lightbox(e.target.src, e.target.alt);
+        const act = e.target.closest('button[data-act]')?.dataset.act;
+        if (!act) return;
+        if (act === 'close') return d.close();
+        if (act === 'pick') return d.querySelector('input[type=file]').click();
+        if (act === 'edit') {
+          d.close();
+          return ND.openEditor(i, async f => {
+            await ND.send('update', { id: i.id, fields: f });
+            await reload();
+          });
+        }
+        try {
+          if (act === 'low') await ND.send('setLow', { id: i.id, low: !i.low });
+          if (act === 'back') await ND.send('setStatus', { id: i.id, status: '購入リスト' });
+          d.close();
+          await reload();
+        } catch (err) {
+          alert('更新できませんでした: ' + err.message);
+        }
+      });
+
+      // 写真を選んだら、小さくして保存し、詳細を開き直す
+      d.querySelector('input[type=file]').addEventListener('change', async e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        try {
+          const url = await ND.photoDataUrl(file);
+          await ND.send('update', { id: i.id, fields: { photo: url } });
+          d.close();
+          await reload();
+          const fresh = items.find(x => x.id === i.id);
+          if (fresh) openDetail(fresh);
+        } catch (err) {
+          alert('保存できませんでした: ' + err.message);
+        }
+      });
+
+      d.showModal();
     }
 
     $('#q').addEventListener('input', e => { query = e.target.value; render(); });
@@ -182,49 +256,12 @@
       if (k) { filter = k; render(); }
     });
 
-    $('#list').addEventListener('click', async e => {
-      if (e.target.matches('img.zoom')) return ND.lightbox(e.target.src, e.target.alt);
-      const b = e.target.closest('button[data-act]');
+    // 札・行をタップしたら詳細を開く
+    $('#list').addEventListener('click', e => {
+      const b = e.target.closest('button[data-id]');
       if (!b) return;
-      if (b.dataset.act === 'pick') {
-        b.closest('.card').querySelector('input[type=file]').click();
-        return;
-      }
       const item = items.find(i => i.id === b.dataset.id);
-      try {
-        if (b.dataset.act === 'edit') {
-          ND.openEditor(item, async f => {
-            await ND.send('update', { id: item.id, fields: f });
-            await reload();
-          });
-          return;
-        }
-        if (b.dataset.act === 'low') await ND.send('setLow', { id: item.id, low: !item.low });
-        if (b.dataset.act === 'back') await ND.send('setStatus', { id: item.id, status: '購入リスト' });
-        await reload();
-      } catch (err) {
-        alert('更新できませんでした: ' + err.message);
-      }
-    });
-
-    // 写真を選んだら、小さくしてその持ち物に保存する
-    $('#list').addEventListener('change', async e => {
-      const input = e.target;
-      if (input.type !== 'file') return;
-      const file = input.files[0];
-      if (!file) return;
-      const item = items.find(i => i.id === input.dataset.id);
-      $('#msg').textContent = '写真を保存しています…';
-      try {
-        const url = await ND.photoDataUrl(file);
-        await ND.send('update', { id: item.id, fields: { photo: url } });
-        $('#msg').textContent = '写真を保存しました。';
-        await reload();
-      } catch (err) {
-        $('#msg').textContent = '';
-        alert('保存できませんでした: ' + err.message);
-      }
-      input.value = '';
+      if (item) openDetail(item);
     });
 
     $('#add').onclick = () => ND.openEditor(null, async f => {
