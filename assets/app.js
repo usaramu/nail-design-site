@@ -97,7 +97,7 @@ const ND = (() => {
   });
 
   // 追加・編集ダイアログ（item が null のときは追加）
-  function openEditor(item, onSave) {
+  function openEditor(item, onSave, opts = {}) {
     document.querySelector('#nd-dlg')?.remove();
     const v = item || {};
     const dlg = document.createElement('dialog');
@@ -107,7 +107,7 @@ const ND = (() => {
         <div class="form-head" tabindex="-1" autofocus><h3>${item ? '編集' : '追加'}</h3></div>
         <div class="form-body">
         <label>商品名<input name="name" required value="${esc(v.name)}"></label>
-        <label>カテゴリ<select name="category">${categories.map(c => `<option${v.category === c ? ' selected' : ''}>${c}</option>`).join('')}</select></label>
+        <label>カテゴリ<select name="category">${(opts.categories || categories).map(c => `<option${v.category === c ? ' selected' : ''}>${c}</option>`).join('')}</select></label>
         <label>見た目の説明（AI用）<input name="desc" value="${esc(v.desc)}" placeholder="例：深みのあるボルドー"></label>
         <label>色・番号<input name="color" value="${esc(v.color)}"></label>
         <label>サイズ・容量<input name="size" value="${esc(v.size)}"></label>
@@ -179,7 +179,7 @@ const ND = (() => {
       if (i.low) t += '（残りわずか）';
       return '・' + t;
     };
-    return ['ジェル', 'パーツ', '基本用品']
+    return ['ジェル', 'パーツ']
       .map(c => { const g = mine.filter(i => i.category === c); return g.length ? `【${c}】\n${g.map(line).join('\n')}` : ''; })
       .filter(Boolean).join('\n\n');
   }

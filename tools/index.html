@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#fbf7f6">
   <title>持ち物リスト</title>
-  <link rel="stylesheet" href="../assets/style.css?v=202611101956">
+  <link rel="stylesheet" href="../assets/style.css?v=202611101958">
   <style>
     /* 明るい下地。下のボタンで切り替え、タップで詳細シート */
     :root {
@@ -112,7 +112,7 @@
     /* 下部：カテゴリの切り替え（親指で押しやすい位置） */
     .dock {
       position: fixed; left: 0; right: 0; bottom: 0; z-index: 6;
-      display: grid; grid-template-columns: repeat(5, 1fr);
+      display: grid; grid-template-columns: repeat(3, 1fr);
       background: rgba(255, 255, 255, .96); border-top: 1px solid var(--line); box-shadow: 0 -4px 18px rgba(122, 31, 43, .05);
       padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
     }
@@ -183,8 +183,8 @@
   <button class="add" id="add" aria-label="持ち物を追加">＋</button>
   <nav class="dock" id="dock"></nav>
 
-  <script src="../assets/config.js?v=202611101956"></script>
-  <script src="../assets/app.js?v=202611101956"></script>
+  <script src="../assets/config.js?v=202611101958"></script>
+  <script src="../assets/app.js?v=202611101958"></script>
   <script>
     const $ = s => document.querySelector(s);
     let items = [];
@@ -213,7 +213,9 @@
     const visual = (i, cls, alt = '') => textOf(i.photo)
       ? `<span class="${cls} lbl">${ND.esc(textOf(i.photo))}</span>`
       : `<img class="${cls}" src="${ND.esc(photoSrc(i.photo))}" alt="${alt}" loading="lazy">`;
-    const TABS = [['ジェル', 'ジェル'], ['パーツ', 'パーツ'], ['ツール', 'ツール'], ['基本用品', '基本'], ['low', '少なめ']];
+    // 持ち物リストで管理するのはジェルとパーツだけ
+    const KINDS = ['ジェル', 'パーツ'];
+    const TABS = [['ジェル', 'ジェル'], ['パーツ', 'パーツ'], ['low', '少なめ']];
 
     async function reload() {
       if (!ND.configured()) { $('#msg').textContent = 'まだ設定されていません。'; return; }
@@ -222,7 +224,7 @@
     }
 
     function render() {
-      const mine = items.filter(i => i.status === '持ち物');
+      const mine = items.filter(i => i.status === '持ち物' && KINDS.includes(i.category));
       const inTab = i => tab === 'low' ? i.low : i.category === tab;
 
       $('#dock').innerHTML = TABS.map(([k, label]) =>
@@ -250,7 +252,7 @@
         const fill = (3 - view.length % 3) % 3;
         $('#list').innerHTML = `<section class="group"><div class="tray">${view.map(cell).join('')}${'<span class="cell"></span>'.repeat(fill)}</div></section>`;
       } else if (tab === 'low') {
-        $('#list').innerHTML = ND.categories.map(c => {
+        $('#list').innerHTML = KINDS.map(c => {
           const g = view.filter(i => i.category === c);
           return g.length ? `<section class="group"><h2>${ND.esc(c)}<small>${g.length}</small></h2><ul class="lines">${g.map(line).join('')}</ul></section>` : '';
         }).join('');
@@ -323,7 +325,7 @@
             Object.assign(i, f);
             render();
             ND.later(() => ND.send('update', { id: i.id, fields: f }), reload);
-          });
+          }, { categories: KINDS });
         }
         if (act === 'low') {
           i.low = !i.low;
@@ -376,7 +378,7 @@
       items.push({ ...item, id: 'tmp' + Date.now() });
       render();
       ND.later(() => ND.send('add', { item }), reload);
-    });
+    }, { categories: KINDS });
 
     reload();
   </script>
