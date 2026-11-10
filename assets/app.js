@@ -102,7 +102,7 @@ const ND = (() => {
     dlg.id = 'nd-dlg';
     dlg.innerHTML = `
       <form id="nd-form">
-        <div class="form-head"><h3>${item ? '編集' : '追加'}</h3></div>
+        <div class="form-head" tabindex="-1" autofocus><h3>${item ? '編集' : '追加'}</h3></div>
         <div class="form-body">
         <label>商品名<input name="name" required value="${esc(v.name)}"></label>
         <label>カテゴリ<select name="category">${categories.map(c => `<option${v.category === c ? ' selected' : ''}>${c}</option>`).join('')}</select></label>

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>指示プロンプト</title>
-  <link rel="stylesheet" href="../assets/style.css?v=202611101923">
+  <link rel="stylesheet" href="../assets/style.css?v=202611101926">
   <style>
     /* タイトルだけの一覧。タップで本文とボタンが開く */
     #list { border-bottom: 1px solid var(--line); }
@@ -31,8 +31,8 @@
   <div id="list"></div>
   <p id="msg" class="note"></p>
 
-  <script src="../assets/config.js?v=202611101923"></script>
-  <script src="../assets/app.js?v=202611101923"></script>
+  <script src="../assets/config.js?v=202611101926"></script>
+  <script src="../assets/app.js?v=202611101926"></script>
   <script>
     const $ = s => document.querySelector(s);
     let prompts = [];
@@ -102,7 +102,7 @@
       dlg.id = 'pr-dlg';
       dlg.innerHTML = `
         <form id="pr-form">
-          <div class="form-head"><h3>${p ? '編集' : '追加'}</h3></div>
+          <div class="form-head" tabindex="-1" autofocus><h3>${p ? '編集' : '追加'}</h3></div>
           <div class="form-body">
             <label>タイトル<input name="title" required value="${ND.esc(p?.title || '')}"></label>
             <label>プロンプト本文<textarea name="body" required rows="12">${ND.esc(p?.body || '')}</textarea></label>
