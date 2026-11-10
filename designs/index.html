@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>デザイン一覧</title>
-  <link rel="stylesheet" href="../assets/style.css?v=202611101958">
+  <link rel="stylesheet" href="../assets/style.css?v=202611102003">
   <style>
     .design { border-top: 1px solid var(--line); padding: 14px 0 0; margin-bottom: 8px; }
     .design > summary {
@@ -22,6 +22,45 @@
     .step figcaption { font-size: .8rem; color: var(--muted); margin: 8px 0 6px; }
     .step input[type=file] { display: none; }
     .guide-link { font-size: .85rem; }
+
+    /* 使うもの：丸い写真で並べる */
+    .uses { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 14px 8px; margin: 6px 0 10px; }
+    .use { min-width: 0; text-align: center; position: relative; }
+    .use .ph {
+      display: block; width: 54px; height: 54px; margin: 2px auto 6px; border-radius: 50%; object-fit: cover;
+      background: var(--surface); border: 1px dashed var(--gold);
+    }
+    .use img.ph { border: 0; box-shadow: 0 0 0 1px var(--line), 0 0 0 3px var(--paper), 0 0 0 4px rgba(176,141,87,.55); }
+    .use .nm { display: block; font-size: .66rem; line-height: 1.4; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .use.not-owned .ph { opacity: .45; }
+    .use .buy { display: inline-block; font-size: .6rem; color: var(--bordeaux); border: 1px solid var(--bordeaux); border-radius: 999px; padding: 0 6px; margin-top: 2px; }
+    .uses-empty { color: var(--muted); font-size: .85rem; margin: 4px 0 8px; }
+    .choose { border-radius: 999px; font-size: .8rem; padding: 6px 14px; }
+
+    /* 使うものを選ぶシート */
+    #picker {
+      margin: auto auto 0; width: 100%; max-width: 560px; max-height: 92dvh;
+      padding: 0; border: 0; border-radius: 18px 18px 0 0; overflow: hidden;
+      background: var(--surface); box-shadow: 0 -10px 30px rgba(42, 28, 32, .12);
+    }
+    #picker[open] { animation: nd-up .25s ease-out; }
+    #picker .wrap { display: flex; flex-direction: column; max-height: 92dvh; }
+    #picker .pick-body { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 4px 20px 16px; }
+    #picker h4 { font-size: .85rem; color: var(--bordeaux); margin: 16px 0 10px; font-weight: 700; }
+    #picker .grid2 { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 14px 8px; }
+    #picker .opt { min-width: 0; padding: 0; border: 0; background: transparent; text-align: center; position: relative; border-radius: 0; color: var(--ink); }
+    #picker .opt:hover { background: transparent; color: var(--ink); }
+    #picker .opt .ph { display: block; width: 54px; height: 54px; margin: 4px auto 6px; border-radius: 50%; object-fit: cover; background: var(--paper); border: 1px dashed var(--gold); transition: box-shadow .15s; }
+    #picker .opt img.ph { border: 0; box-shadow: 0 0 0 1px var(--line); }
+    #picker .opt .nm { display: block; font-size: .66rem; line-height: 1.4; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #picker .opt.on .ph { box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--bordeaux); }
+    #picker .opt.on .nm { color: var(--bordeaux); font-weight: 500; }
+    #picker .opt .ck {
+      position: absolute; top: 0; left: calc(50% + 14px); width: 20px; height: 20px; border-radius: 50%;
+      background: var(--bordeaux); color: #fff; font-size: .7rem; line-height: 20px; display: none; border: 2px solid var(--surface);
+    }
+    #picker .opt.on .ck { display: block; }
+    #picker .count { font-size: .78rem; color: var(--muted); font-weight: 400; margin-left: 8px; }
   </style>
 </head>
 <body>
@@ -40,8 +79,9 @@
         <input id="nname" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #d6c5bd;border-radius:6px;font:inherit">
       </label>
 
-      <h3 style="font-size:.95rem;margin:14px 0 4px">今ある持ち物から使うもの（チェック）</h3>
-      <div id="pick" class="meta"></div>
+      <h3 style="font-size:.95rem;margin:14px 0 4px">使うもの</h3>
+      <div id="newuses" class="uses"></div>
+      <button type="button" class="choose" id="newchoose">使うものを選ぶ</button>
 
       <h3 style="font-size:.95rem;margin:14px 0 4px">新しく買うもの（1行に1つ）</h3>
       <textarea id="nnew" rows="6" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #d6c5bd;border-radius:6px;font:inherit" placeholder="名前 | カテゴリ | 色・番号 | サイズ | 購入先"></textarea>
@@ -54,12 +94,18 @@
 
   <p id="msg" class="note"></p>
 
-  <script src="../assets/config.js?v=202611101958"></script>
-  <script src="../assets/app.js?v=202611101958"></script>
+  <script src="../assets/config.js?v=202611102003"></script>
+  <script src="../assets/app.js?v=202611102003"></script>
   <script>
     const $ = s => document.querySelector(s);
     let items = [];
     let images = []; // 差し替えた指示画像（シート designimages）
+    let newPicked = new Set(); // 新しいデザインで選んだ持ち物
+    const KINDS = ['ジェル', 'パーツ'];
+    const photoSrc = p => /^(https?:|data:)/.test(p) ? p : '../' + p;
+    const ph = i => i.photo && !String(i.photo).startsWith('text:')
+      ? `<img class="ph" src="${ND.esc(photoSrc(i.photo))}" alt="" loading="lazy">`
+      : '<span class="ph"></span>';
 
     // デザインキー → 表示名・ガイドページ・既定の指示画像
     const DESIGNS = {
@@ -87,7 +133,7 @@
       try {
         let loaded = false;
         await Promise.all([
-          ND.listFast(null, d => { items = d; loaded = true; render(); renderPick(); }),
+          ND.listFast(null, d => { items = d; loaded = true; render(); renderNewUses(); }),
           ND.listFast('designimages', d => { images = d; if (loaded) render(); }).catch(() => { images = []; })
         ]);
       } catch (e) {
@@ -115,6 +161,8 @@
         const have = need.filter(i => i.status === '持ち物');
         const missing = need.filter(i => i.status === '購入リスト');
         const low = have.filter(i => i.low);
+        const uses = need.filter(i => KINDS.includes(i.category));
+        const others = need.filter(i => !KINDS.includes(i.category) && i.status === '購入リスト');
         const line = list => list.length
           ? list.map(i => `<li>${ND.esc(i.name)}${i.color ? '（' + ND.esc(i.color) + '）' : ''}</li>`).join('')
           : '<li>なし</li>';
@@ -139,26 +187,94 @@
               <h3>指示画像</h3>
               <div class="steps">${steps}</div>
 
-              <h3>持っている ${have.length} / ${need.length}</h3>
-              <h3>足りない（購入リスト）</h3>
-              <ul class="meta">${line(missing)}</ul>
-              <h3>残り少なめ</h3>
-              <ul class="meta">${line(low)}</ul>
+              <h3>使うもの<span class="meta" style="font-weight:400;margin-left:8px">持っている ${have.length} / ${need.length}</span></h3>
+              ${uses.length ? `<div class="uses">${uses.map(useTile).join('')}</div>` : '<p class="uses-empty">まだ選んでいません</p>'}
+              <button type="button" class="choose" data-choose="${ND.esc(key)}">使うものを選ぶ</button>
+              ${others.length ? `<h3>そのほか必要なもの</h3><ul class="meta">${line(others)}</ul>` : ''}
+              ${low.length ? `<h3>残り少なめ</h3><ul class="meta">${line(low)}</ul>` : ''}
             </div>
           </details>`;
       }).join('');
     }
 
-    function renderPick() {
-      $('#pick').innerHTML = items.length
-        ? items.map(i => `
-            <label style="display:flex;gap:8px;align-items:center;margin:4px 0">
-              <input type="checkbox" value="${ND.esc(i.id)}">
-              <span>${ND.esc(i.name)}${i.color ? '（' + ND.esc(i.color) + '）' : ''}
-                <small>［${i.status === '持ち物' ? '持ち物' : '購入リスト'}］</small></span>
-            </label>`).join('')
-        : '<p class="empty">まだありません。</p>';
+    const useTile = i => `
+      <div class="use${i.status === '持ち物' ? '' : ' not-owned'}">
+        ${ph(i)}
+        <span class="nm">${ND.esc(i.name)}</span>
+        ${i.status === '持ち物' ? '' : '<span class="buy">未購入</span>'}
+      </div>`;
+
+    function renderNewUses() {
+      const list = items.filter(i => newPicked.has(i.id));
+      $('#newuses').innerHTML = list.map(useTile).join('');
     }
+
+    // 使うものを選ぶシート（ジェル・パーツを丸で並べて、タップで選ぶ）
+    function openPicker(selected, title, onDone) {
+      document.querySelector('#picker')?.remove();
+      const sel = new Set(selected);
+      const d = document.createElement('dialog');
+      d.id = 'picker';
+      const opt = i => `<button type="button" class="opt${sel.has(i.id) ? ' on' : ''}" data-id="${ND.esc(i.id)}" aria-pressed="${sel.has(i.id)}">
+          ${ph(i)}<span class="ck">✓</span><span class="nm">${ND.esc(i.name)}</span></button>`;
+      const section = c => {
+        const list = items.filter(i => i.category === c);
+        list.sort((a, b) => (a.status === '持ち物' ? 0 : 1) - (b.status === '持ち物' ? 0 : 1));
+        return list.length ? `<h4>${c}</h4><div class="grid2">${list.map(opt).join('')}</div>` : '';
+      };
+      d.innerHTML = `<div class="wrap">
+          <div class="form-head"><h3>${ND.esc(title)}<span class="count"></span></h3></div>
+          <div class="pick-body">${KINDS.map(section).join('')}</div>
+          <div class="form-foot"><button type="button" data-act="cancel">キャンセル</button><button type="button" data-act="ok" style="background:var(--bordeaux);color:#fff">決定</button></div>
+        </div>`;
+      document.body.appendChild(d);
+      const count = () => { d.querySelector('.count').textContent = sel.size + '個'; };
+      count();
+      d.addEventListener('click', e => {
+        if (e.target === d) return d.close();
+        const o = e.target.closest('.opt');
+        if (o) {
+          const id = o.dataset.id;
+          sel.has(id) ? sel.delete(id) : sel.add(id);
+          o.classList.toggle('on', sel.has(id));
+          o.setAttribute('aria-pressed', sel.has(id));
+          return count();
+        }
+        const act = e.target.closest('[data-act]')?.dataset.act;
+        if (act === 'cancel') d.close();
+        if (act === 'ok') { d.close(); onDone(sel); }
+      });
+      d.showModal();
+    }
+
+    // デザインに使うものを保存（変わった持ち物の designs 列だけ書き換える）
+    function applyUses(key, sel) {
+      const changed = [];
+      items.filter(i => KINDS.includes(i.category)).forEach(i => {
+        const keys = ND.designsOf(i);
+        const has = keys.includes(key), want = sel.has(i.id);
+        if (has === want) return;
+        const next = want ? [...keys, key] : keys.filter(k => k !== key);
+        i.designs = next.join(', ');
+        changed.push(i);
+      });
+      if (!changed.length) return;
+      render();
+      ND.later(async () => {
+        for (const i of changed) await ND.send('update', { id: i.id, fields: { designs: i.designs } });
+      }, reload);
+    }
+
+    $('#list').addEventListener('click', e => {
+      const b = e.target.closest('button[data-choose]');
+      if (!b) return;
+      const key = b.dataset.choose;
+      const d = DESIGNS[key] || { name: key };
+      const current = items.filter(i => ND.designsOf(i).includes(key)).map(i => i.id);
+      openPicker(current, d.name, sel => applyUses(key, sel));
+    });
+
+    $('#newchoose').onclick = () => openPicker(newPicked, '使うもの', sel => { newPicked = new Set(sel); renderNewUses(); });
 
     // 「写真を入れる」ボタンで、対応する入力欄を開く
     $('#list').addEventListener('click', e => {
@@ -193,8 +309,8 @@
       const btn = $('#save');
       btn.disabled = true;
       try {
-        for (const cb of $('#pick').querySelectorAll('input[type=checkbox]:checked')) {
-          const it = items.find(i => i.id === cb.value);
+        for (const id of newPicked) {
+          const it = items.find(i => i.id === id);
           if (!it) continue;
           const keys = ND.designsOf(it);
           if (!keys.includes(key)) keys.push(key);
@@ -216,6 +332,8 @@
           } });
         }
         $('#newform').reset();
+        newPicked = new Set();
+        renderNewUses();
         $('#msg').textContent = `「${key}」を追加しました。`;
         await reload();
       } catch (err) {

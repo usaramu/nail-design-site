@@ -120,7 +120,6 @@ const ND = (() => {
         <label>写真（任意）<input type="file" id="nd-file" accept="image/*"></label>
         <p class="note" id="nd-status" style="margin:4px 0 0"></p>
         <input type="hidden" name="photo" value="${esc(v.photo)}">
-        <label>使うデザイン<input name="designs" value="${esc(v.designs)}" placeholder="harvard"></label>
         </div>
         <div class="form-foot"><button type="button" id="nd-cancel">キャンセル</button><button type="submit">保存</button></div>
       </form>`;
