@@ -111,7 +111,7 @@ const ND = (() => {
         <label>商品番号<input name="sku" value="${esc(v.sku)}" inputmode="text" autocomplete="off"></label>
         <label>メモ<input name="note" value="${esc(v.note)}"></label>
         <fieldset class="nd-tags"><legend>色タグ</legend>${chips('colortag', colorTags, tagsOf(v.colortag))}</fieldset>
-        <fieldset class="nd-tags"><legend>質感タグ</legend>${chips('texture', textureTags, tagsOf(v.texture))}</fieldset>
+        <fieldset class="nd-tags"><legend>質感タグ（1つ）</legend>${chips('texture', textureTags, tagsOf(v.texture).slice(0, 1), 'radio')}</fieldset>
         <label>写真（任意）<input type="file" id="nd-file" accept="image/*"></label>
         <p class="note" id="nd-status" style="margin:4px 0 0"></p>
         <input type="hidden" name="photo" value="${esc(v.photo)}">
@@ -120,6 +120,11 @@ const ND = (() => {
       </form>`;
     document.body.appendChild(dlg);
     dlg.querySelector('#nd-cancel').onclick = () => dlg.close();
+    dlg.querySelectorAll('input[type=radio][name=texture]').forEach(r => {
+      const chip = r.closest('label');
+      chip.addEventListener('pointerdown', () => { r.dataset.was = r.checked ? '1' : ''; });
+      r.addEventListener('click', () => { if (r.dataset.was) r.checked = false; r.dataset.was = ''; });
+    });
     dlg.querySelector('#nd-form').onsubmit = async e => {
       e.preventDefault();
       const fd = new FormData(e.target);
@@ -144,8 +149,9 @@ const ND = (() => {
   }
 
   // タグを選ぶチェックボックス（押すと色が付く小さな札）
-  function chips(name, all, on) {
-    return all.map(t => `<label class="nd-chip"><input type="checkbox" name="${name}" value="${esc(t)}"${on.includes(t) ? ' checked' : ''}><span>${esc(t)}</span></label>`).join('');
+  // type='radio' のときは1つだけ選べる（選んだものをもう一度押すと外れる）
+  function chips(name, all, on, type = 'checkbox') {
+    return all.map(t => `<label class="nd-chip"><input type="${type}" name="${name}" value="${esc(t)}"${on.includes(t) ? ' checked' : ''}><span>${esc(t)}</span></label>`).join('');
   }
 
   // 「designs」列（例: "harvard, other"）を配列にする
