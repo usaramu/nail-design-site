@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>デザイン一覧</title>
-  <link rel="stylesheet" href="../assets/style.css?v=202611102029">
+  <link rel="stylesheet" href="../assets/style.css?v=202611102032">
   <style>
     .design { border-top: 1px solid var(--line); padding: 14px 0 0; margin-bottom: 8px; }
     .design > summary {
@@ -94,8 +94,8 @@
 
   <p id="msg" class="note"></p>
 
-  <script src="../assets/config.js?v=202611102029"></script>
-  <script src="../assets/app.js?v=202611102029"></script>
+  <script src="../assets/config.js?v=202611102032"></script>
+  <script src="../assets/app.js?v=202611102032"></script>
   <script>
     const $ = s => document.querySelector(s);
     let items = [];
@@ -178,7 +178,7 @@
       }
       $('#list').innerHTML = keys.map(key => {
         const d = DESIGNS[key] || { name: key };
-        const need = items.filter(i => i.status !== '削除' && ND.designsOf(i).includes(key));
+        const need = items.filter(i => i.status !== '削除' && KINDS.includes(i.category) && ND.designsOf(i).includes(key));
         const have = need.filter(i => i.status === '持ち物');
         const src = imageFor(key, SLOTS[0].slot);
         const pct = need.length ? Math.round(have.length / need.length * 100) : 0;
@@ -187,7 +187,6 @@
             ${src ? `<img src="${ND.esc(src)}" alt="" loading="lazy">` : '<span class="noimg"></span>'}
             <span class="info">
               <span class="dname">${ND.esc(nameOf(key))}</span>
-              <span class="prog"><span style="width:${pct}%"></span></span>
               <span class="meta">持っている ${have.length} / ${need.length}</span>
             </span>
             <span class="go" aria-hidden="true">›</span>

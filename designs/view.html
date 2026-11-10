@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>デザイン</title>
-  <link rel="stylesheet" href="../assets/style.css?v=202611102029">
+  <link rel="stylesheet" href="../assets/style.css?v=202611102032">
   <style>
     .design { border-top: 1px solid var(--line); padding: 14px 0 0; margin-bottom: 8px; }
     .design > summary {
@@ -116,8 +116,8 @@
 
   <p id="msg" class="note"></p>
 
-  <script src="../assets/config.js?v=202611102029"></script>
-  <script src="../assets/app.js?v=202611102029"></script>
+  <script src="../assets/config.js?v=202611102032"></script>
+  <script src="../assets/app.js?v=202611102032"></script>
   <script>
     const $ = s => document.querySelector(s);
     let items = [];
@@ -202,7 +202,7 @@
       }
       $('#list').innerHTML = [key].map(key => {
         const d = DESIGNS[key] || { name: key };
-        const need = items.filter(i => i.status !== '削除' && ND.designsOf(i).includes(key));
+        const need = items.filter(i => i.status !== '削除' && KINDS.includes(i.category) && ND.designsOf(i).includes(key));
         const have = need.filter(i => i.status === '持ち物');
         const missing = need.filter(i => i.status === '購入リスト');
         const low = have.filter(i => i.low);
@@ -229,14 +229,9 @@
               <h3>指示画像</h3>
               <div class="steps">${steps}</div>
 
-              <h3>使うもの</h3>
+              <h3>使うもの一覧<span class="meta" style="font-weight:400;margin-left:8px">${need.length ? need.length : ''}</span></h3>
               ${need.length ? `
-                <div class="summary">
-                  <div class="snum"><b>${have.length}</b><span> / ${need.length}</span> そろっている</div>
-                  <div class="sbar"><span style="width:${pct}%"></span></div>
-                </div>
 
-                <h4 class="sec">使うもの一覧<small>${need.length}</small></h4>
                 <ul class="uselist">${[...have, ...tobuy].map(useRow).join('')}</ul>
                 ${tobuy.length ? '<p class="tolist"><a href="../tools/shopping.html">購入リストを開く ›</a></p>' : ''}
               ` : '<p class="uses-empty">まだ選んでいません</p>'}
