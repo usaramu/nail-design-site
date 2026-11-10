@@ -208,14 +208,14 @@ dialog button[type=submit]:hover { background: #5c1620; }
 /* 追加・編集の入力画面：下から出るシート。
    中身だけがスクロールし、保存ボタンはいつも下に見える。背景は動かない */
 html:has(dialog[open]) { overflow: hidden; }
-#nd-dlg, #pr-dlg {
+#nd-dlg, #pr-dlg, #new-dlg {
   margin: auto auto 0; width: 100%; max-width: 560px; max-height: 92dvh;
   padding: 0; border: 0; border-radius: 18px 18px 0 0; overflow: hidden;
   background: var(--surface); box-shadow: 0 -10px 30px rgba(42, 28, 32, .12);
 }
-#nd-dlg[open], #pr-dlg[open] { animation: nd-up .25s ease-out; }
+#nd-dlg[open], #pr-dlg[open], #new-dlg[open] { animation: nd-up .25s ease-out; }
 @keyframes nd-up { from { transform: translateY(32px); opacity: 0; } to { transform: none; opacity: 1; } }
-#nd-dlg form, #pr-dlg form { display: flex; flex-direction: column; max-height: 92dvh; }
+#nd-dlg form, #pr-dlg form, #new-dlg form { display: flex; flex-direction: column; max-height: 92dvh; }
 .form-head { padding: 16px 20px 10px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
 .form-head h3 { margin: 0 !important; }
 .form-head:focus { outline: none; }
@@ -231,7 +231,7 @@ html:has(dialog[open]) { overflow: hidden; }
 /* 16px 未満だと iPhone が入力時に画面を拡大して、がたつく原因になる */
 dialog input, dialog select, dialog textarea { font-size: 16px; }
 dialog textarea { resize: vertical; line-height: 1.7; }
-@media (prefers-reduced-motion: reduce) { #nd-dlg[open], #pr-dlg[open] { animation: none; } }
+@media (prefers-reduced-motion: reduce) { #nd-dlg[open], #pr-dlg[open], #new-dlg[open] { animation: none; } }
 .btns button { margin-left: 6px; }
 
 /* ホームのメニュー：ノートの目次のように罫線で並べる */

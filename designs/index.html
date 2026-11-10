@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>デザイン一覧</title>
-  <link rel="stylesheet" href="../assets/style.css?v=202611102011">
+  <link rel="stylesheet" href="../assets/style.css?v=202611102016">
   <style>
     .design { border-top: 1px solid var(--line); padding: 14px 0 0; margin-bottom: 8px; }
     .design > summary {
@@ -75,46 +75,31 @@
     .dcard .prog span { display: block; height: 100%; background: var(--gold); border-radius: 4px; }
     .dcard .meta { font-size: .75rem; }
     .dcard .go { font-size: 1.4rem; color: var(--muted); }
+    #new-dlg h4.sub { font-size: .85rem; color: var(--bordeaux); margin: 22px 0 8px; font-weight: 700; }
+    .buys { list-style: none; padding: 0; margin: 0 0 10px; }
+    .buys li { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: .9rem; }
+    .buys li span { flex: 1; min-width: 0; }
+    .buys li small { display: block; color: var(--muted); font-size: .75rem; }
+    .buys li button { border: 0; background: transparent; color: var(--muted); font-size: 1.1rem; padding: 2px 8px; }
+    .buys li button:hover { background: transparent; color: var(--bordeaux); }
   </style>
 </head>
 <body>
   <p><a href="../index.html">← ホームへ戻る</a></p>
   <h1>デザイン一覧</h1>
+  <p><button id="newbtn">＋ 新しいデザイン</button></p>
 
   <div id="list"></div>
 
-  <details class="card" style="margin-top:24px">
-    <summary style="cursor:pointer;font-weight:bold;color:#7a1f2b">＋ 新しいデザインを追加（購入リストにも反映）</summary>
-    <form id="newform" style="margin-top:12px">
-      <label style="display:block;font-size:.85rem">デザインのキー（英字・例: spring）
-        <input id="nkey" required style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #d6c5bd;border-radius:6px;font:inherit">
-      </label>
-      <label style="display:block;font-size:.85rem;margin-top:10px">表示名（例: Spring Pink）
-        <input id="nname" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #d6c5bd;border-radius:6px;font:inherit">
-      </label>
-
-      <h3 style="font-size:.95rem;margin:14px 0 4px">使うもの</h3>
-      <div id="newuses" class="uses"></div>
-      <button type="button" class="choose" id="newchoose">使うものを選ぶ</button>
-
-      <h3 style="font-size:.95rem;margin:14px 0 4px">新しく買うもの（1行に1つ）</h3>
-      <textarea id="nnew" rows="6" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #d6c5bd;border-radius:6px;font:inherit" placeholder="名前 | カテゴリ | 色・番号 | サイズ | 購入先"></textarea>
-
-      <div style="text-align:right;margin-top:14px">
-        <button type="submit" id="save" style="background:#7a1f2b;color:#fff;border-color:#7a1f2b">保存して購入リストに反映</button>
-      </div>
-    </form>
-  </details>
 
   <p id="msg" class="note"></p>
 
-  <script src="../assets/config.js?v=202611102011"></script>
-  <script src="../assets/app.js?v=202611102011"></script>
+  <script src="../assets/config.js?v=202611102016"></script>
+  <script src="../assets/app.js?v=202611102016"></script>
   <script>
     const $ = s => document.querySelector(s);
     let items = [];
     let images = []; // 差し替えた指示画像（シート designimages）
-    let newPicked = new Set(); // 新しいデザインで選んだ持ち物
     const KINDS = ['ジェル', 'パーツ'];
     const photoSrc = p => /^(https?:|data:)/.test(p) ? p : '../' + p;
     const ph = i => i.photo && !String(i.photo).startsWith('text:')
@@ -147,7 +132,7 @@
       try {
         let loaded = false;
         await Promise.all([
-          ND.listFast(null, d => { items = d; loaded = true; render(); renderNewUses(); }),
+          ND.listFast(null, d => { items = d; loaded = true; render(); }),
           ND.listFast('designimages', d => { images = d; if (loaded) render(); }).catch(() => { images = []; })
         ]);
       } catch (e) {
@@ -217,10 +202,6 @@
         ${i.status === '持ち物' ? '' : '<span class="buy">未購入</span>'}
       </div>`;
 
-    function renderNewUses() {
-      const list = items.filter(i => newPicked.has(i.id));
-      $('#newuses').innerHTML = list.map(useTile).join('');
-    }
 
     // 使うものを選ぶシート（ジェル・パーツを丸で並べて、タップで選ぶ）
     function openPicker(selected, title, onDone) {
@@ -287,7 +268,6 @@
       openPicker(current, d.name, sel => applyUses(key, sel));
     });
 
-    $('#newchoose').onclick = () => openPicker(newPicked, '使うもの', sel => { newPicked = new Set(sel); renderNewUses(); });
 
     // 「写真を入れる」ボタンで、対応する入力欄を開く
     $('#list').addEventListener('click', e => {
@@ -315,49 +295,61 @@
       input.value = '';
     });
 
-    $('#newform').addEventListener('submit', async e => {
-      e.preventDefault();
-      const key = $('#nkey').value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
-      if (!key) return alert('デザインのキーは英字で入力してください（例: spring）');
-      const btn = $('#save');
-      btn.disabled = true;
-      try {
-        for (const id of newPicked) {
-          const it = items.find(i => i.id === id);
-          if (!it) continue;
-          const keys = ND.designsOf(it);
-          if (!keys.includes(key)) keys.push(key);
-          await ND.send('update', { id: it.id, fields: { designs: keys.join(', ') } });
-        }
-        const lines = $('#nnew').value.split('\n').map(l => l.trim()).filter(Boolean);
-        for (const line of lines) {
-          const [name, cat, color, size, shop] = line.split('|').map(s => (s || '').trim());
-          if (!name) continue;
-          await ND.send('add', { item: {
-            name,
-            category: ND.categories.includes(cat) ? cat : '基本用品',
-            color: color || '',
-            size: size || '',
-            shop: shop || '',
-            designs: key,
-            status: '購入リスト',
-            low: false
-          } });
-        }
-        const nname = $('#nname').value.trim();
-        if (nname) await ND.send('setDesignImage', { design: key, slot: 'NAME', url: nname });
-        await ND.send('setDesignImage', { design: key, slot: 'HIDDEN', url: '' });
-        $('#newform').reset();
-        newPicked = new Set();
-        renderNewUses();
-        $('#msg').textContent = `「${key}」を追加しました。`;
-        await reload();
-      } catch (err) {
-        alert('追加できませんでした: ' + err.message);
-      } finally {
-        btn.disabled = false;
-      }
-    });
+    // 新しいデザイン：名前・使うもの・新しく買うものを、1枚のシートで入れる
+    $('#newbtn').onclick = () => {
+      document.querySelector('#new-dlg')?.remove();
+      let picked = new Set();
+      const buys = [];   // 新しく買うもの（編集画面で1つずつ追加）
+      const d = document.createElement('dialog');
+      d.id = 'new-dlg';
+      d.innerHTML = `<form>
+          <div class="form-head" tabindex="-1" autofocus><h3>新しいデザイン</h3></div>
+          <div class="form-body">
+            <label>デザイン名<input name="name" required></label>
+            <h4 class="sub">使うもの（持っているもの）</h4>
+            <div class="uses" data-uses></div>
+            <button type="button" class="choose" data-pick>使うものを選ぶ</button>
+            <h4 class="sub">新しく買うもの</h4>
+            <ul class="buys" data-buys></ul>
+            <button type="button" class="choose" data-buy>＋ 買うものを追加</button>
+          </div>
+          <div class="form-foot"><button type="button" data-x>キャンセル</button><button type="submit">作成</button></div>
+        </form>`;
+      document.body.appendChild(d);
+      const drawUses = () => { d.querySelector('[data-uses]').innerHTML = items.filter(i => picked.has(i.id)).map(useTile).join(''); };
+      const drawBuys = () => {
+        d.querySelector('[data-buys]').innerHTML = buys.map((f, k) => `
+          <li><span>${ND.esc(f.name)}<small>${ND.esc([f.category, f.color, f.shop].filter(Boolean).join(' ／ '))}</small></span>
+            <button type="button" data-rm="${k}" aria-label="外す">×</button></li>`).join('');
+      };
+      d.querySelector('[data-x]').onclick = () => d.close();
+      d.querySelector('[data-pick]').onclick = () => openPicker(picked, '使うもの', sel => { picked = new Set(sel); drawUses(); });
+      d.querySelector('[data-buy]').onclick = () => ND.openEditor(null, f => { buys.push(f); drawBuys(); });
+      d.querySelector('[data-buys]').addEventListener('click', e => {
+        const k = e.target.closest('[data-rm]')?.dataset.rm;
+        if (k != null) { buys.splice(+k, 1); drawBuys(); }
+      });
+      d.querySelector('form').onsubmit = e => {
+        e.preventDefault();
+        const name = new FormData(e.target).get('name').trim();
+        if (!name) return;
+        const key = 'd' + Date.now().toString(36);
+        // 画面を先に変える
+        setMeta(key, 'NAME', name);
+        const pickedItems = items.filter(i => picked.has(i.id));
+        pickedItems.forEach(i => { i.designs = [...ND.designsOf(i), key].join(', '); });
+        buys.forEach((f, k) => items.push({ ...f, id: 'tmp' + Date.now() + k, status: '購入リスト', low: false, designs: key }));
+        d.close();
+        render();
+        // 保存は裏で
+        ND.later(async () => {
+          await ND.send('setDesignImage', { design: key, slot: 'NAME', url: name });
+          for (const i of pickedItems) await ND.send('update', { id: i.id, fields: { designs: i.designs } });
+          for (const f of buys) await ND.send('add', { item: { ...f, status: '購入リスト', low: false, designs: key } });
+        }, reload);
+      };
+      d.showModal();
+    };
 
     reload();
   </script>
