@@ -108,6 +108,7 @@ const ND = (() => {
         <div class="form-body">
         <label>商品名<input name="name" required value="${esc(v.name)}"></label>
         <label>カテゴリ<select name="category">${categories.map(c => `<option${v.category === c ? ' selected' : ''}>${c}</option>`).join('')}</select></label>
+        <label>見た目の説明（AI用）<input name="desc" value="${esc(v.desc)}" placeholder="例：深みのあるボルドー"></label>
         <label>色・番号<input name="color" value="${esc(v.color)}"></label>
         <label>サイズ・容量<input name="size" value="${esc(v.size)}"></label>
         <label>購入先<input name="shop" value="${esc(v.shop)}"></label>
@@ -166,6 +167,21 @@ const ND = (() => {
   // type='radio' のときは1つだけ選べる（選んだものをもう一度押すと外れる）
   function chips(name, all, on, type = 'checkbox') {
     return all.map(t => `<label class="nd-chip"><input type="${type}" name="${name}" value="${esc(t)}"${on.includes(t) ? ' checked' : ''}><span>${esc(t)}</span></label>`).join('');
+  }
+
+  // 持ち物を、AIに渡しやすい文章にする（見た目の説明＋質感・種類）
+  function inventoryText(items) {
+    const mine = items.filter(i => i.status === '持ち物');
+    const line = i => {
+      let t = String(i.desc || i.name || '').trim();
+      if (i.category === 'パーツ' && i.parttype) t = `${i.parttype}：${t}`;
+      if (i.category === 'ジェル') { const tx = tagsOf(i.texture)[0]; if (tx) t += `／${tx}`; }
+      if (i.low) t += '（残りわずか）';
+      return '・' + t;
+    };
+    return ['ジェル', 'パーツ', 'ツール', '基本用品']
+      .map(c => { const g = mine.filter(i => i.category === c); return g.length ? `【${c}】\n${g.map(line).join('\n')}` : ''; })
+      .filter(Boolean).join('\n\n');
   }
 
   // 「designs」列（例: "harvard, other"）を配列にする
@@ -243,5 +259,5 @@ const ND = (() => {
     return res.url;
   }
 
-  return { cfg, configured, esc, later, categories, colorTags, textureTags, partTypes, tagsOf, list, listFast, send, openEditor, designsOf, lightbox, uploadPhoto, photoDataUrl, copyText };
+  return { cfg, configured, esc, later, categories, colorTags, textureTags, partTypes, tagsOf, inventoryText, list, listFast, send, openEditor, designsOf, lightbox, uploadPhoto, photoDataUrl, copyText };
 })();

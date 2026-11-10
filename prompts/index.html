@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>指示プロンプト</title>
-  <link rel="stylesheet" href="../assets/style.css?v=202611101943">
+  <link rel="stylesheet" href="../assets/style.css?v=202611101954">
   <style>
     /* タイトルだけの一覧。タップで本文とボタンが開く */
     #list { border-bottom: 1px solid var(--line); }
@@ -21,21 +21,31 @@
     .prompt .body { display: none; padding: 0 0 18px; }
     .prompt.open .body { display: block; }
     .prompt.open pre { max-height: none; margin-top: 0; }
+    .topbtns button { margin-right: 6px; }
+    mark.inv {
+      background: #fbdbe2; color: var(--bordeaux); font-weight: 500;
+      padding: 0 6px; border-radius: 999px; font-size: .9em;
+    }
+    .insert { margin: 8px 0 0; }
+    .insert button { font-size: .8rem; padding: 5px 12px; border-radius: 999px; }
   </style>
 </head>
 <body>
   <p><a href="../index.html">← ホームへ戻る</a></p>
   <h1>指示プロンプト</h1>
-  <p><button id="add">＋ プロンプトを追加</button></p>
+  <p class="topbtns"><button id="add">＋ プロンプトを追加</button> <button id="copyinv">持ち物をコピー</button></p>
 
   <div id="list"></div>
   <p id="msg" class="note"></p>
 
-  <script src="../assets/config.js?v=202611101943"></script>
-  <script src="../assets/app.js?v=202611101943"></script>
+  <script src="../assets/config.js?v=202611101954"></script>
+  <script src="../assets/app.js?v=202611101954"></script>
   <script>
     const $ = s => document.querySelector(s);
     let prompts = [];
+    let items = [];   // 持ち物（{持ち物} の差し込み用）
+    const TOKEN_INV = '{持ち物}';
+    const fill = body => String(body || '').split(TOKEN_INV).join(ND.inventoryText(items));
 
     async function reload() {
       if (!ND.configured()) {
@@ -43,7 +53,10 @@
         return;
       }
       try {
-        await ND.listFast('prompts', d => { prompts = d; render(); });
+        await Promise.all([
+          ND.listFast('prompts', d => { prompts = d; render(); }),
+          ND.listFast(null, d => { items = d; })
+        ]);
       } catch (e) {
         $('#msg').textContent = '読み込みに失敗しました: ' + e.message;
       }
@@ -55,7 +68,7 @@
             <div class="prompt" data-id="${ND.esc(p.id)}">
               <button type="button" class="ttl" data-act="toggle"><span>${ND.esc(p.title || '（無題）')}</span></button>
               <div class="body">
-                <pre>${ND.esc(p.body)}</pre>
+                <pre>${ND.esc(p.body).split(ND.esc(TOKEN_INV)).join('<mark class="inv">持ち物</mark>')}</pre>
                 <div class="actions">
                   <button data-act="copy">全文コピー</button>
                   <button data-act="edit">編集</button>
@@ -79,7 +92,7 @@
         return;
       }
       if (b.dataset.act === 'copy') {
-        await ND.copyText(p.body);
+        await ND.copyText(fill(p.body));
         b.textContent = 'コピーしました';
         setTimeout(() => { b.textContent = '全文コピー'; }, 1500);
         return;
@@ -106,11 +119,20 @@
           <div class="form-body">
             <label>タイトル<input name="title" required value="${ND.esc(p?.title || '')}"></label>
             <label>プロンプト本文<textarea name="body" required rows="12">${ND.esc(p?.body || '')}</textarea></label>
+            <p class="insert"><button type="button" id="pr-inv">＋ 持ち物を差し込む</button></p>
           </div>
           <div class="form-foot"><button type="button" id="pr-cancel">キャンセル</button><button type="submit">保存</button></div>
         </form>`;
       document.body.appendChild(dlg);
       dlg.querySelector('#pr-cancel').onclick = () => dlg.close();
+      // カーソルの位置に {持ち物} を入れる（コピーするとき今の持ち物一覧に置き換わる）
+      dlg.querySelector('#pr-inv').onclick = () => {
+        const ta = dlg.querySelector('textarea[name=body]');
+        const a = ta.selectionStart ?? ta.value.length, b = ta.selectionEnd ?? a;
+        ta.value = ta.value.slice(0, a) + TOKEN_INV + ta.value.slice(b);
+        ta.focus();
+        ta.setSelectionRange(a + TOKEN_INV.length, a + TOKEN_INV.length);
+      };
       dlg.querySelector('#pr-form').onsubmit = async e => {
         e.preventDefault();
         const f = Object.fromEntries(new FormData(e.target));
@@ -129,6 +151,12 @@
     }
 
     $('#add').onclick = () => openForm(null);
+    $('#copyinv').onclick = async e => {
+      const b = e.currentTarget;
+      await ND.copyText(ND.inventoryText(items));
+      b.textContent = 'コピーしました';
+      setTimeout(() => { b.textContent = '持ち物をコピー'; }, 1500);
+    };
 
     reload();
   </script>
