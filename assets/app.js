@@ -179,7 +179,7 @@ const ND = (() => {
       if (i.low) t += '（残りわずか）';
       return '・' + t;
     };
-    return ['ジェル', 'パーツ', 'ツール', '基本用品']
+    return ['ジェル', 'パーツ', '基本用品']
       .map(c => { const g = mine.filter(i => i.category === c); return g.length ? `【${c}】\n${g.map(line).join('\n')}` : ''; })
       .filter(Boolean).join('\n\n');
   }
