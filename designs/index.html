@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>デザイン一覧</title>
-  <link rel="stylesheet" href="../assets/style.css?v=202611102003">
+  <link rel="stylesheet" href="../assets/style.css?v=202611102005">
   <style>
     .design { border-top: 1px solid var(--line); padding: 14px 0 0; margin-bottom: 8px; }
     .design > summary {
@@ -61,6 +61,20 @@
     }
     #picker .opt.on .ck { display: block; }
     #picker .count { font-size: .78rem; color: var(--muted); font-weight: 400; margin-left: 8px; }
+    /* デザインのカード（タップで詳細ページへ） */
+    #list { display: grid; gap: 12px; margin-top: 8px; }
+    .dcard {
+      display: flex; align-items: center; gap: 14px; padding: 12px; border: 1px solid var(--line);
+      border-radius: 14px; background: var(--surface); color: var(--ink); text-decoration: none;
+    }
+    .dcard:hover { border-color: var(--gold); }
+    .dcard img, .dcard .noimg { width: 72px; height: 72px; border-radius: 10px; object-fit: cover; object-position: top; flex-shrink: 0; background: var(--paper); border: 1px solid var(--line); }
+    .dcard .info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+    .dcard .dname { font-family: var(--serif); font-weight: 700; color: var(--bordeaux); font-size: 1rem; line-height: 1.4; }
+    .dcard .prog { display: block; height: 4px; border-radius: 4px; background: var(--line); overflow: hidden; }
+    .dcard .prog span { display: block; height: 100%; background: var(--gold); border-radius: 4px; }
+    .dcard .meta { font-size: .75rem; }
+    .dcard .go { font-size: 1.4rem; color: var(--muted); }
   </style>
 </head>
 <body>
@@ -94,8 +108,8 @@
 
   <p id="msg" class="note"></p>
 
-  <script src="../assets/config.js?v=202611102003"></script>
-  <script src="../assets/app.js?v=202611102003"></script>
+  <script src="../assets/config.js?v=202611102005"></script>
+  <script src="../assets/app.js?v=202611102005"></script>
   <script>
     const $ = s => document.querySelector(s);
     let items = [];
@@ -150,7 +164,7 @@
     }
 
     function render() {
-      const keys = [...new Set(items.flatMap(ND.designsOf))];
+      const keys = [...new Set([...Object.keys(DESIGNS), ...items.flatMap(ND.designsOf)])];
       if (!keys.length) {
         $('#list').innerHTML = '<p class="done">まだありません。</p>';
         return;
@@ -159,41 +173,18 @@
         const d = DESIGNS[key] || { name: key };
         const need = items.filter(i => ND.designsOf(i).includes(key));
         const have = need.filter(i => i.status === '持ち物');
-        const missing = need.filter(i => i.status === '購入リスト');
-        const low = have.filter(i => i.low);
-        const uses = need.filter(i => KINDS.includes(i.category));
-        const others = need.filter(i => !KINDS.includes(i.category) && i.status === '購入リスト');
-        const line = list => list.length
-          ? list.map(i => `<li>${ND.esc(i.name)}${i.color ? '（' + ND.esc(i.color) + '）' : ''}</li>`).join('')
-          : '<li>なし</li>';
-        const steps = SLOTS.map(s => {
-          const src = imageFor(key, s.slot);
-          return `
-            <figure class="step" style="margin:0">
-              ${src
-                ? `<img class="zoom" src="${ND.esc(/^https?:/.test(src) ? src : '../' + src)}" alt="${ND.esc(s.label)}">`
-                : `<div class="empty-img">写真を入れてください</div>`}
-              <figcaption>${ND.esc(s.label)}</figcaption>
-              <button type="button" data-act="pick" data-design="${ND.esc(key)}" data-slot="${s.slot}">写真を入れる・差し替える</button>
-              <input type="file" accept="image/*" data-design="${ND.esc(key)}" data-slot="${s.slot}">
-            </figure>`;
-        }).join('');
+        const src = imageFor(key, SLOTS[0].slot);
+        const pct = need.length ? Math.round(have.length / need.length * 100) : 0;
         return `
-          <details class="design">
-            <summary>${ND.esc(d.name)}</summary>
-            <div class="design-body">
-              ${d.page ? `<p class="guide-link"><a href="${d.page}">制作ガイドを開く</a></p>` : ''}
-
-              <h3>指示画像</h3>
-              <div class="steps">${steps}</div>
-
-              <h3>使うもの<span class="meta" style="font-weight:400;margin-left:8px">持っている ${have.length} / ${need.length}</span></h3>
-              ${uses.length ? `<div class="uses">${uses.map(useTile).join('')}</div>` : '<p class="uses-empty">まだ選んでいません</p>'}
-              <button type="button" class="choose" data-choose="${ND.esc(key)}">使うものを選ぶ</button>
-              ${others.length ? `<h3>そのほか必要なもの</h3><ul class="meta">${line(others)}</ul>` : ''}
-              ${low.length ? `<h3>残り少なめ</h3><ul class="meta">${line(low)}</ul>` : ''}
-            </div>
-          </details>`;
+          <a class="dcard" href="view.html?d=${encodeURIComponent(key)}">
+            ${src ? `<img src="${ND.esc(src)}" alt="" loading="lazy">` : '<span class="noimg"></span>'}
+            <span class="info">
+              <span class="dname">${ND.esc(d.name)}</span>
+              <span class="prog"><span style="width:${pct}%"></span></span>
+              <span class="meta">持っている ${have.length} / ${need.length}</span>
+            </span>
+            <span class="go" aria-hidden="true">›</span>
+          </a>`;
       }).join('');
     }
 
