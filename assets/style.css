@@ -319,3 +319,7 @@ dialog label.nd-chip { display: inline-block; margin: 0 6px 6px 0; }
 
 #nd-crop [data-ok] { background: var(--bordeaux); color: #fff; }
 #nd-crop [data-ok]:hover { background: #5c1620; }
+.form-top { display: flex; gap: 8px; padding: 12px 20px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
+.form-top button { flex: 1; border-radius: 999px; font-size: .8rem; padding: 8px 6px; }
+#nd-unlink { border-color: var(--line); color: var(--muted); }
+

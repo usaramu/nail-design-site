@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>デザイン</title>
-  <link rel="stylesheet" href="../assets/style.css?v=202611102048">
+  <link rel="stylesheet" href="../assets/style.css?v=202611102051">
   <style>
     .design { border-top: 1px solid var(--line); padding: 14px 0 0; margin-bottom: 8px; }
     .design > summary {
@@ -163,8 +163,8 @@
 
   <p id="msg" class="note"></p>
 
-  <script src="../assets/config.js?v=202611102048"></script>
-  <script src="../assets/app.js?v=202611102048"></script>
+  <script src="../assets/config.js?v=202611102051"></script>
+  <script src="../assets/app.js?v=202611102051"></script>
   <script>
     const $ = s => document.querySelector(s);
     let items = [];
@@ -284,8 +284,7 @@
                 <ul class="uselist">${sortUses(need).map(useRow).join('')}</ul>
                 ${tobuy.length ? '<p class="tolist"><a href="../tools/shopping.html">購入リストを開く ›</a></p>' : ''}
               ` : '<p class="uses-empty">まだ選んでいません</p>'}
-              <p class="btnrow"><button type="button" class="choose main" data-wizard>＋ 使うものを入力</button>
-                <button type="button" class="choose" data-choose="${ND.esc(key)}">持ち物から選び直す</button></p>
+              <p class="btnrow"><button type="button" class="choose main" data-wizard>＋ 使うものを入力</button></p>
           </div>`;
       }).join('');
     }
@@ -304,6 +303,42 @@
     const sortUses = list => [...list].sort((a, b) =>
       (KINDS.indexOf(a.category) - KINDS.indexOf(b.category)) ||
       ((a.status === '持ち物' ? 0 : 1) - (b.status === '持ち物' ? 0 : 1)));
+
+    // 1つだけ別の持ち物に変える：一覧からタップで選ぶと、すぐ入れ替わる
+    function openSwap(cur) {
+      document.querySelector('#picker')?.remove();
+      const d = document.createElement('dialog');
+      d.id = 'picker';
+      const cats = [cur.category, ...KINDS.filter(c => c !== cur.category)].filter(c => KINDS.includes(c));
+      const opt = i => `<button type="button" class="opt${i.id === cur.id ? ' on' : ''}" data-id="${ND.esc(i.id)}">
+          ${ph(i)}<span class="ck">✓</span><span class="nm">${ND.esc(i.name)}</span></button>`;
+      const section = c => {
+        const list = items.filter(i => i.category === c && i.status === '持ち物');
+        return list.length ? `<h4>${c}</h4><div class="grid2">${list.map(opt).join('')}</div>` : '';
+      };
+      d.innerHTML = `<div class="wrap">
+          <div class="form-head"><h3>「${ND.esc(cur.name)}」を変える</h3></div>
+          <div class="pick-body">${cats.map(section).join('')}</div>
+          <div class="form-foot"><button type="button" data-act="cancel">キャンセル</button></div>
+        </div>`;
+      document.body.appendChild(d);
+      d.addEventListener('click', e => {
+        if (e.target === d || e.target.closest('[data-act=cancel]')) return d.close();
+        const o = e.target.closest('.opt');
+        if (!o || o.dataset.id === cur.id) return;
+        const to = items.find(i => i.id === o.dataset.id);
+        d.close();
+        // 今のものを外して、選んだものをこのデザインに付ける
+        cur.designs = ND.designsOf(cur).filter(k => k !== KEY).join(', ');
+        if (!ND.designsOf(to).includes(KEY)) to.designs = [...ND.designsOf(to), KEY].join(', ');
+        render();
+        ND.later(async () => {
+          await ND.send('update', { id: cur.id, fields: { designs: cur.designs } });
+          await ND.send('update', { id: to.id, fields: { designs: to.designs } });
+        }, reload);
+      });
+      d.showModal();
+    }
 
     // デザインから外す（持ち物そのものは消さない）
     function unlink(i) {
@@ -580,7 +615,7 @@
           Object.assign(i, f);
           render();
           ND.later(() => ND.send('update', { id: i.id, fields: f }), reload);
-        }, { onUnlink: () => unlink(i), onDelete: () => { ND.removeItem(i, reload); render(); } });
+        }, { onSwap: () => openSwap(i), onUnlink: () => unlink(i), onDelete: () => { ND.removeItem(i, reload); render(); } });
       }
       const bt = e.target.closest('[data-bought]');
       if (bt) {

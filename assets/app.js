@@ -105,6 +105,7 @@ const ND = (() => {
     dlg.innerHTML = `
       <form id="nd-form">
         <div class="form-head" tabindex="-1" autofocus><h3>${item ? '編集' : '追加'}</h3></div>
+        ${item && (opts.onSwap || opts.onUnlink) ? `<div class="form-top">${opts.onSwap ? '<button type="button" id="nd-swap">別の持ち物に変える</button>' : ''}${opts.onUnlink ? '<button type="button" id="nd-unlink">このデザインから外す</button>' : ''}</div>` : ''}
         <div class="form-body">
         <label>商品名<input name="name" required value="${esc(v.name)}"></label>
         <label>カテゴリ<select name="category">${(opts.categories || categories).map(c => `<option${v.category === c ? ' selected' : ''}>${c}</option>`).join('')}</select></label>
@@ -121,11 +122,13 @@ const ND = (() => {
         <p class="note" id="nd-status" style="margin:4px 0 0"></p>
         <input type="hidden" name="photo" value="${esc(v.photo)}">
         </div>
-        ${item && (opts.onDelete || opts.onUnlink) ? `<div class="form-del">${opts.onUnlink ? '<button type="button" id="nd-unlink">このデザインから外す</button>' : ''}${opts.onDelete ? '<button type="button" id="nd-delete">この持ち物を削除</button>' : ''}</div>` : ''}
+        ${item && opts.onDelete ? '<div class="form-del"><button type="button" id="nd-delete">この持ち物を削除</button></div>' : ''}
         <div class="form-foot"><button type="button" id="nd-cancel">キャンセル</button><button type="submit">保存</button></div>
       </form>`;
     document.body.appendChild(dlg);
     dlg.querySelector('#nd-cancel').onclick = () => dlg.close();
+    const swp = dlg.querySelector('#nd-swap');
+    if (swp) swp.onclick = () => { dlg.close(); opts.onSwap(); };
     const unl = dlg.querySelector('#nd-unlink');
     if (unl) unl.onclick = () => {
       if (!confirm(`「${v.name}」をこのデザインから外しますか？\n（持ち物リスト・購入リストからは消えません）`)) return;
