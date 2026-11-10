@@ -300,3 +300,22 @@ dialog label.nd-chip { display: inline-block; margin: 0 6px 6px 0; }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
+
+/* サムネイルの切り抜き */
+#nd-crop {
+  margin: auto auto 0; width: 100%; max-width: 560px; padding: 0; border: 0;
+  border-radius: 18px 18px 0 0; background: var(--surface); box-shadow: 0 -10px 30px rgba(42, 28, 32, .12);
+}
+#nd-crop[open] { animation: nd-up .25s ease-out; }
+.crop-body { padding: 16px 20px 8px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.crop-frame {
+  position: relative; width: min(70vw, 300px); aspect-ratio: 4 / 5; overflow: hidden;
+  border-radius: 16px; background: var(--paper); touch-action: none; cursor: grab;
+  box-shadow: 0 0 0 1px var(--line);
+}
+.crop-frame img { position: absolute; left: 0; top: 0; max-width: none; user-select: none; -webkit-user-select: none; pointer-events: none; }
+.crop-zoom { display: flex; align-items: center; gap: 10px; width: min(70vw, 300px); font-size: .8rem; color: var(--muted); }
+.crop-zoom input { flex: 1; accent-color: var(--bordeaux); margin: 0 !important; padding: 0 !important; border: 0 !important; }
+
+#nd-crop [data-ok] { background: var(--bordeaux); color: #fff; }
+#nd-crop [data-ok]:hover { background: #5c1620; }

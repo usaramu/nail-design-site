@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>デザイン一覧</title>
-  <link rel="stylesheet" href="../assets/style.css?v=202611102037">
+  <link rel="stylesheet" href="../assets/style.css?v=202611102039">
   <style>
     .design { border-top: 1px solid var(--line); padding: 14px 0 0; margin-bottom: 8px; }
     .design > summary {
@@ -104,8 +104,8 @@
 
   <p id="msg" class="note"></p>
 
-  <script src="../assets/config.js?v=202611102037"></script>
-  <script src="../assets/app.js?v=202611102037"></script>
+  <script src="../assets/config.js?v=202611102039"></script>
+  <script src="../assets/app.js?v=202611102039"></script>
   <script>
     const $ = s => document.querySelector(s);
     let items = [];
@@ -322,7 +322,10 @@
       d.querySelector('input[name=thumb]').addEventListener('change', async e => {
         const f = e.target.files[0];
         if (!f) return;
-        thumb = await ND.photoDataUrl(f);
+        e.target.value = '';
+        const out = await ND.cropImage(await ND.imageData(f, 1600, .9));
+        if (!out) return;
+        thumb = out;
         d.querySelector('[data-tprev]').innerHTML = `<img src="${thumb}" alt="">`;
       });
       d.querySelector('form').onsubmit = async e => {

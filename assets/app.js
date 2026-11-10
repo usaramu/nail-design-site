@@ -248,6 +248,66 @@ const ND = (() => {
     return c.toDataURL('image/jpeg', quality);
   }
 
+  // 写真の切り抜き（サムネイル用）：枠の中で指で動かし、つまみで拡大。決定で 4:5 の JPEG を返す
+  function cropImage(src, aspect = 4 / 5) {
+    return new Promise(resolve => {
+      document.querySelector('#nd-crop')?.remove();
+      const d = document.createElement('dialog');
+      d.id = 'nd-crop';
+      d.innerHTML = `
+        <div class="crop-wrap">
+          <div class="form-head"><h3>サムネイルを調整</h3></div>
+          <div class="crop-body">
+            <div class="crop-frame"><img alt="" draggable="false"></div>
+            <label class="crop-zoom">拡大<input type="range" min="1" max="4" step="0.01" value="1"></label>
+          </div>
+          <div class="form-foot"><button type="button" data-x>キャンセル</button><button type="button" data-ok>決定</button></div>
+        </div>`;
+      document.body.appendChild(d);
+      const frame = d.querySelector('.crop-frame'), img = frame.querySelector('img'), zoom = d.querySelector('input[type=range]');
+      let W = 0, H = 0, base = 1, z = 1, x = 0, y = 0;   // 画像の大きさ・最小倍率・拡大・位置
+      const fw = () => frame.clientWidth, fh = () => frame.clientHeight;
+      const clamp = () => {
+        const w = W * base * z, h = H * base * z;
+        x = Math.min(0, Math.max(fw() - w, x));
+        y = Math.min(0, Math.max(fh() - h, y));
+      };
+      const paint = () => { clamp(); img.style.width = W * base * z + 'px'; img.style.transform = `translate(${x}px, ${y}px)`; };
+      img.onload = () => {
+        W = img.naturalWidth; H = img.naturalHeight;
+        base = Math.max(fw() / W, fh() / H);
+        x = (fw() - W * base) / 2; y = (fh() - H * base) / 2;
+        paint();
+      };
+      img.src = src;
+      // 指（マウス）で動かす
+      let drag = null;
+      frame.addEventListener('pointerdown', e => { drag = { sx: e.clientX, sy: e.clientY, x, y }; frame.setPointerCapture(e.pointerId); });
+      frame.addEventListener('pointermove', e => { if (!drag) return; x = drag.x + e.clientX - drag.sx; y = drag.y + e.clientY - drag.sy; paint(); });
+      frame.addEventListener('pointerup', () => { drag = null; });
+      frame.addEventListener('pointercancel', () => { drag = null; });
+      // 拡大は枠の真ん中を中心に
+      zoom.addEventListener('input', () => {
+        const cx = fw() / 2, cy = fh() / 2, nz = +zoom.value;
+        x = cx - (cx - x) * nz / z; y = cy - (cy - y) * nz / z; z = nz;
+        paint();
+      });
+      const done = v => { d.close(); d.remove(); resolve(v); };
+      d.querySelector('[data-x]').onclick = () => done(null);
+      d.querySelector('[data-ok]').onclick = () => {
+        const s = 1 / (base * z);                    // 画面の1pxが元画像の何pxか
+        const sx = -x * s, sy = -y * s, sw = fw() * s, sh = fh() * s;
+        const c = document.createElement('canvas');
+        c.width = 560; c.height = Math.round(560 / aspect);
+        c.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, c.width, c.height);
+        let q = .85, out = c.toDataURL('image/jpeg', q);
+        while (out.length > 45000 && q > .4) { q -= .08; out = c.toDataURL('image/jpeg', q); }
+        done(out);
+      };
+      d.showModal();
+    });
+  }
+
   // 持ち物を削除する（表からは消さず「削除」の印を付け、どこにも出さない）
   function removeItem(item, refresh) {
     item.status = '削除';
@@ -287,5 +347,5 @@ const ND = (() => {
     return res.url;
   }
 
-  return { cfg, configured, esc, later, categories, colorTags, textureTags, partTypes, tagsOf, inventoryText, list, listFast, send, openEditor, designsOf, lightbox, uploadPhoto, photoDataUrl, imageData, removeItem, copyText };
+  return { cfg, configured, esc, later, categories, colorTags, textureTags, partTypes, tagsOf, inventoryText, list, listFast, send, openEditor, designsOf, lightbox, uploadPhoto, photoDataUrl, imageData, cropImage, removeItem, copyText };
 })();

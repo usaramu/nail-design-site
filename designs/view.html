@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>デザイン</title>
-  <link rel="stylesheet" href="../assets/style.css?v=202611102037">
+  <link rel="stylesheet" href="../assets/style.css?v=202611102039">
   <style>
     .design { border-top: 1px solid var(--line); padding: 14px 0 0; margin-bottom: 8px; }
     .design > summary {
@@ -108,7 +108,10 @@
     .thumbpick { display: flex; align-items: center; gap: 12px; margin-top: 6px; }
     .tprev { width: 64px; height: 80px; border-radius: 10px; border: 1px dashed var(--gold); background: var(--paper); flex-shrink: 0; overflow: hidden; }
     .tprev img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .thumbpick input { margin-top: 0 !important; }
+    .thumbpick { flex-wrap: wrap; }
+    .thumbpick input { margin-top: 0 !important; flex: 1; min-width: 160px; }
+    .tbtns { display: flex; gap: 6px; width: 100%; }
+    .tbtns button { border-radius: 999px; font-size: .76rem; padding: 4px 12px; }
     .choose.main { background: var(--bordeaux); color: #fff; }
     .choose.main:hover { background: #5c1620; }
     #new-dlg .count { font-size: .78rem; color: var(--muted); font-weight: 400; margin-left: 10px; }
@@ -151,8 +154,8 @@
 
   <p id="msg" class="note"></p>
 
-  <script src="../assets/config.js?v=202611102037"></script>
-  <script src="../assets/app.js?v=202611102037"></script>
+  <script src="../assets/config.js?v=202611102039"></script>
+  <script src="../assets/app.js?v=202611102039"></script>
   <script>
     const $ = s => document.querySelector(s);
     let items = [];
@@ -589,29 +592,42 @@
       d.innerHTML = `<form>
           <div class="form-head" tabindex="-1" autofocus><h3>デザインを編集</h3></div>
           <div class="form-body"><label>デザイン名<input name="name" required value="${ND.esc(nameOf(KEY))}"></label>
-            <label>サムネイル写真<span class="thumbpick"><span class="tprev" data-tprev>${metaOf(KEY, 'THUMB') ? `<img src="${metaOf(KEY, 'THUMB')}" alt="">` : ''}</span><input type="file" accept="image/*" name="thumb"></span></label></div>
+            <label>サムネイル写真<span class="thumbpick"><span class="tprev" data-tprev>${metaOf(KEY, 'THUMB') ? `<img src="${metaOf(KEY, 'THUMB')}" alt="">` : ''}</span><input type="file" accept="image/*" name="thumb"><span class="tbtns"><button type="button" data-tadjust>位置を調整</button><button type="button" data-tclear>外す</button></span></span></label></div>
           <div class="form-foot"><button type="button" data-x>キャンセル</button><button type="submit">保存</button></div>
         </form>`;
       document.body.appendChild(d);
       d.querySelector('[data-x]').onclick = () => d.close();
-      let thumb = '';
+      let thumb = null;                       // null：変えない ／ ''：外す ／ 画像：新しいサムネイル
+      const showT = () => {
+        const t = thumb ?? metaOf(KEY, 'THUMB');
+        d.querySelector('[data-tprev]').innerHTML = t ? `<img src="${t}" alt="">` : '';
+      };
+      // 写真を選んだら、そのまま切り抜き画面へ
       d.querySelector('input[name=thumb]').addEventListener('change', async e => {
         const f = e.target.files[0];
+        e.target.value = '';
         if (!f) return;
-        thumb = await ND.photoDataUrl(f);
-        d.querySelector('[data-tprev]').innerHTML = `<img src="${thumb}" alt="">`;
+        const out = await ND.cropImage(await ND.imageData(f, 1600, .9));
+        if (out) { thumb = out; showT(); }
       });
+      d.querySelector('[data-tadjust]').onclick = async () => {
+        const t = thumb ?? metaOf(KEY, 'THUMB');
+        if (!t) return d.querySelector('input[name=thumb]').click();
+        const out = await ND.cropImage(t);
+        if (out) { thumb = out; showT(); }
+      };
+      d.querySelector('[data-tclear]').onclick = () => { thumb = ''; showT(); };
       d.querySelector('form').onsubmit = e => {
         e.preventDefault();
         const name = new FormData(e.target).get('name').trim();
         if (!name) return;
         setMeta(KEY, 'NAME', name);
-        if (thumb) setMeta(KEY, 'THUMB', thumb);
+        if (thumb !== null) setMeta(KEY, 'THUMB', thumb);
         d.close();
         render();
         ND.later(async () => {
           await ND.send('setDesignImage', { design: KEY, slot: 'NAME', url: name });
-          if (thumb) await ND.send('setDesignImage', { design: KEY, slot: 'THUMB', url: thumb });
+          if (thumb !== null) await ND.send('setDesignImage', { design: KEY, slot: 'THUMB', url: thumb });
         }, reload);
       };
       d.showModal();
