@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>デザイン一覧</title>
-  <link rel="stylesheet" href="../assets/style.css?v=202611102032">
+  <link rel="stylesheet" href="../assets/style.css?v=202611102034">
   <style>
     .design { border-top: 1px solid var(--line); padding: 14px 0 0; margin-bottom: 8px; }
     .design > summary {
@@ -63,14 +63,20 @@
     #picker .count { font-size: .78rem; color: var(--muted); font-weight: 400; margin-left: 8px; }
     /* デザインのカード（タップで詳細ページへ） */
     #list { display: grid; gap: 12px; margin-top: 8px; }
+    #list { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 18px 12px; }
     .dcard {
-      display: flex; align-items: center; gap: 14px; padding: 12px; border: 1px solid var(--line);
-      border-radius: 14px; background: var(--surface); color: var(--ink); text-decoration: none;
+      display: flex; flex-direction: column; gap: 8px; padding: 0; border: 0;
+      background: transparent; color: var(--ink); text-decoration: none;
     }
-    .dcard:hover { border-color: var(--gold); }
-    .dcard img, .dcard .noimg { width: 72px; height: 72px; border-radius: 10px; object-fit: cover; object-position: top; flex-shrink: 0; background: var(--paper); border: 1px solid var(--line); }
-    .dcard .info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
-    .dcard .dname { font-family: var(--serif); font-weight: 700; color: var(--bordeaux); font-size: 1rem; line-height: 1.4; }
+    .dcard:hover { border: 0; }
+    .dcard img, .dcard .noimg {
+      display: block; width: 100%; aspect-ratio: 4 / 5; border-radius: 16px; object-fit: cover; object-position: top;
+      background: var(--surface); border: 1px solid var(--line); box-shadow: 0 4px 14px rgba(42, 28, 32, .06);
+    }
+    .dcard .noimg { border-style: dashed; border-color: var(--gold); }
+    .dcard:hover img { box-shadow: 0 6px 18px rgba(122, 31, 43, .14); }
+    .dcard .info { display: flex; flex-direction: column; gap: 2px; padding: 0 2px; min-width: 0; }
+    .dcard .dname { font-family: var(--serif); font-weight: 700; color: var(--bordeaux); font-size: .95rem; line-height: 1.4; }
     .dcard .prog { display: block; height: 4px; border-radius: 4px; background: var(--line); overflow: hidden; }
     .dcard .prog span { display: block; height: 100%; background: var(--gold); border-radius: 4px; }
     .dcard .meta { font-size: .75rem; }
@@ -82,6 +88,10 @@
     .buys li small { display: block; color: var(--muted); font-size: .75rem; }
     .buys li button { border: 0; background: transparent; color: var(--muted); font-size: 1.1rem; padding: 2px 8px; }
     .buys li button:hover { background: transparent; color: var(--bordeaux); }
+    .thumbpick { display: flex; align-items: center; gap: 12px; margin-top: 6px; }
+    .tprev { width: 64px; height: 80px; border-radius: 10px; border: 1px dashed var(--gold); background: var(--paper); flex-shrink: 0; overflow: hidden; }
+    .tprev img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .thumbpick input { margin-top: 0 !important; }
   </style>
 </head>
 <body>
@@ -94,8 +104,8 @@
 
   <p id="msg" class="note"></p>
 
-  <script src="../assets/config.js?v=202611102032"></script>
-  <script src="../assets/app.js?v=202611102032"></script>
+  <script src="../assets/config.js?v=202611102034"></script>
+  <script src="../assets/app.js?v=202611102034"></script>
   <script>
     const $ = s => document.querySelector(s);
     let items = [];
@@ -180,7 +190,7 @@
         const d = DESIGNS[key] || { name: key };
         const need = items.filter(i => i.status !== '削除' && KINDS.includes(i.category) && ND.designsOf(i).includes(key));
         const have = need.filter(i => i.status === '持ち物');
-        const src = imageFor(key, SLOTS[0].slot);
+        const src = metaOf(key, 'THUMB') || imageFor(key, SLOTS[0].slot);
         const pct = need.length ? Math.round(have.length / need.length * 100) : 0;
         return `
           <a class="dcard" href="view.html?d=${encodeURIComponent(key)}">
@@ -189,7 +199,6 @@
               <span class="dname">${ND.esc(nameOf(key))}</span>
               <span class="meta">持っている ${have.length} / ${need.length}</span>
             </span>
-            <span class="go" aria-hidden="true">›</span>
           </a>`;
       }).join('');
     }
@@ -305,6 +314,7 @@
           <div class="form-head" tabindex="-1" autofocus><h3>新しいデザイン</h3></div>
           <div class="form-body">
             <label>デザイン名<input name="name" required></label>
+            <label>サムネイル写真<span class="thumbpick"><span class="tprev" data-tprev></span><input type="file" accept="image/*" name="thumb"></span></label>
             <h4 class="sub">使うもの（持っているもの）</h4>
             <div class="uses" data-uses></div>
             <button type="button" class="choose" data-pick>使うものを選ぶ</button>
@@ -322,6 +332,13 @@
             <button type="button" data-rm="${k}" aria-label="外す">×</button></li>`).join('');
       };
       d.querySelector('[data-x]').onclick = () => d.close();
+      // サムネイル：選んだらすぐ小さくして、見本を出す
+      d.querySelector('input[name=thumb]').addEventListener('change', async e => {
+        const f = e.target.files[0];
+        if (!f) return;
+        d.thumbData = await ND.photoDataUrl(f);
+        d.querySelector('[data-tprev]').innerHTML = `<img src="${d.thumbData}" alt="">`;
+      });
       d.querySelector('[data-pick]').onclick = () => openPicker(picked, '使うもの', sel => { picked = new Set(sel); drawUses(); });
       d.querySelector('[data-buy]').onclick = () => ND.openEditor(null, f => { buys.push(f); drawBuys(); });
       d.querySelector('[data-buys]').addEventListener('click', e => {
@@ -330,9 +347,12 @@
       });
       d.querySelector('form').onsubmit = e => {
         e.preventDefault();
-        const name = new FormData(e.target).get('name').trim();
+        const fd = new FormData(e.target);
+        const name = fd.get('name').trim();
         if (!name) return;
         const key = 'd' + Date.now().toString(36);
+        const thumb = d.thumbData || '';
+        if (thumb) setMeta(key, 'THUMB', thumb);
         // 画面を先に変える
         setMeta(key, 'NAME', name);
         const pickedItems = items.filter(i => picked.has(i.id));
@@ -343,6 +363,7 @@
         // 保存は裏で
         ND.later(async () => {
           await ND.send('setDesignImage', { design: key, slot: 'NAME', url: name });
+          if (thumb) await ND.send('setDesignImage', { design: key, slot: 'THUMB', url: thumb });
           for (const i of pickedItems) await ND.send('update', { id: i.id, fields: { designs: i.designs } });
           for (const f of buys) await ND.send('add', { item: { ...f, status: '購入リスト', low: false, designs: key } });
         }, reload);

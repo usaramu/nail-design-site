@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>デザイン</title>
-  <link rel="stylesheet" href="../assets/style.css?v=202611102032">
+  <link rel="stylesheet" href="../assets/style.css?v=202611102034">
   <style>
     .design { border-top: 1px solid var(--line); padding: 14px 0 0; margin-bottom: 8px; }
     .design > summary {
@@ -104,11 +104,17 @@
     .circ .ph { display: block; width: 44px; height: 44px; margin: 0; border-radius: 50%; object-fit: cover; background: var(--paper); border: 1px dashed var(--bordeaux); }
     .circ img.ph { border: 0; box-shadow: 0 0 0 1px var(--line), 0 0 0 3px var(--paper), 0 0 0 4px rgba(176,141,87,.55); }
     .circ .usa { position: absolute; top: -10px; right: -8px; left: auto; width: 18px; height: 22px; transform: rotate(10deg); filter: drop-shadow(0 2px 3px rgba(122,31,43,.22)); }
+    .hero img { display: block; width: min(100%, 320px); aspect-ratio: 4 / 5; object-fit: cover; border-radius: 18px; margin: 0 0 14px; border: 1px solid var(--line); box-shadow: 0 6px 18px rgba(42,28,32,.08); cursor: zoom-in; }
+    .thumbpick { display: flex; align-items: center; gap: 12px; margin-top: 6px; }
+    .tprev { width: 64px; height: 80px; border-radius: 10px; border: 1px dashed var(--gold); background: var(--paper); flex-shrink: 0; overflow: hidden; }
+    .tprev img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .thumbpick input { margin-top: 0 !important; }
   </style>
 </head>
 <body>
   <p><a href="index.html">← デザイン一覧へ戻る</a></p>
   <h1 id="title">デザイン</h1>
+  <div class="hero" id="hero"></div>
   <p class="ops" id="ops"><button type="button" id="rename">編集</button> <button type="button" id="remove">削除</button></p>
 
   <div id="list"></div>
@@ -116,8 +122,8 @@
 
   <p id="msg" class="note"></p>
 
-  <script src="../assets/config.js?v=202611102032"></script>
-  <script src="../assets/app.js?v=202611102032"></script>
+  <script src="../assets/config.js?v=202611102034"></script>
+  <script src="../assets/app.js?v=202611102034"></script>
   <script>
     const $ = s => document.querySelector(s);
     let items = [];
@@ -200,6 +206,8 @@
         $('#ops').hidden = true;
         return;
       }
+      const th = metaOf(key, 'THUMB');
+      $('#hero').innerHTML = th ? `<img class="zoom" src="${ND.esc(th)}" alt="">` : '';
       $('#list').innerHTML = [key].map(key => {
         const d = DESIGNS[key] || { name: key };
         const need = items.filter(i => i.status !== '削除' && KINDS.includes(i.category) && ND.designsOf(i).includes(key));
@@ -383,6 +391,9 @@
 
     const KEY = new URLSearchParams(location.search).get('d') || '';
 
+    // 写真（サムネイル・指示画像）は押すと拡大
+    document.addEventListener('click', e => { if (e.target.matches('img.zoom')) ND.lightbox(e.target.src, e.target.alt); });
+
     // 使うもの・買うものをタップしたら、その場で編集（削除も）
     $('#list').addEventListener('click', e => {
       const t = e.target.closest('[data-item]');
@@ -425,19 +436,31 @@
       d.id = 'nd-dlg';
       d.innerHTML = `<form>
           <div class="form-head" tabindex="-1" autofocus><h3>デザインを編集</h3></div>
-          <div class="form-body"><label>デザイン名<input name="name" required value="${ND.esc(nameOf(KEY))}"></label></div>
+          <div class="form-body"><label>デザイン名<input name="name" required value="${ND.esc(nameOf(KEY))}"></label>
+            <label>サムネイル写真<span class="thumbpick"><span class="tprev" data-tprev>${metaOf(KEY, 'THUMB') ? `<img src="${metaOf(KEY, 'THUMB')}" alt="">` : ''}</span><input type="file" accept="image/*" name="thumb"></span></label></div>
           <div class="form-foot"><button type="button" data-x>キャンセル</button><button type="submit">保存</button></div>
         </form>`;
       document.body.appendChild(d);
       d.querySelector('[data-x]').onclick = () => d.close();
+      let thumb = '';
+      d.querySelector('input[name=thumb]').addEventListener('change', async e => {
+        const f = e.target.files[0];
+        if (!f) return;
+        thumb = await ND.photoDataUrl(f);
+        d.querySelector('[data-tprev]').innerHTML = `<img src="${thumb}" alt="">`;
+      });
       d.querySelector('form').onsubmit = e => {
         e.preventDefault();
         const name = new FormData(e.target).get('name').trim();
         if (!name) return;
         setMeta(KEY, 'NAME', name);
+        if (thumb) setMeta(KEY, 'THUMB', thumb);
         d.close();
         render();
-        ND.later(() => ND.send('setDesignImage', { design: KEY, slot: 'NAME', url: name }), reload);
+        ND.later(async () => {
+          await ND.send('setDesignImage', { design: KEY, slot: 'NAME', url: name });
+          if (thumb) await ND.send('setDesignImage', { design: KEY, slot: 'THUMB', url: thumb });
+        }, reload);
       };
       d.showModal();
     };
