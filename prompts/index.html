@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>指示プロンプト</title>
-  <link rel="stylesheet" href="../assets/style.css?v=202611110240">
+  <link rel="stylesheet" href="../assets/style.css?v=202611110242">
   <style>
     /* タイトルだけの一覧。タップで本文とボタンが開く */
     #list { border-bottom: 1px solid var(--line); }
@@ -20,7 +20,8 @@
     .prompt.open .ttl::after { content: '－'; }
     .prompt .body { display: none; padding: 0 0 18px; }
     .prompt.open .body { display: block; }
-    .prompt.open pre { max-height: none; margin-top: 0; }
+    .prompt.open pre { max-height: none; margin-top: 12px; }
+    .prompt .actions { margin: 0; }
     .topbtns button { margin-right: 6px; }
     mark.inv {
       background: #fbdbe2; color: var(--bordeaux); font-weight: 500;
@@ -66,8 +67,8 @@
     <textarea name="body" required aria-label="プロンプト本文"></textarea>
   </form>
 
-  <script src="../assets/config.js?v=202611110240"></script>
-  <script src="../assets/app.js?v=202611110240"></script>
+  <script src="../assets/config.js?v=202611110242"></script>
+  <script src="../assets/app.js?v=202611110242"></script>
   <script>
     const $ = s => document.querySelector(s);
     let prompts = [];
@@ -96,12 +97,12 @@
             <div class="prompt" data-id="${ND.esc(p.id)}">
               <button type="button" class="ttl" data-act="toggle"><span>${ND.esc(p.title || '（無題）')}</span></button>
               <div class="body">
-                <pre>${ND.esc(p.body).split(ND.esc(TOKEN_INV)).join('<mark class="inv">持ち物</mark>')}</pre>
                 <div class="actions">
                   <button data-act="copy">全文コピー</button>
                   <button data-act="edit">編集</button>
                   <button data-act="delete">削除</button>
                 </div>
+                <pre>${ND.esc(p.body).split(ND.esc(TOKEN_INV)).join('<mark class="inv">持ち物</mark>')}</pre>
               </div>
             </div>`).join('')
         : '<p class="empty">まだありません。</p>';
