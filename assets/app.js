@@ -3,7 +3,7 @@ const ND = (() => {
   const categories = ['ジェル', 'ツール', 'パーツ', '基本用品'];
   // 色タグ・質感タグ（シートの colortag / texture 列にカンマ区切りで入る）
   const colorTags = ['赤系', 'ピンク系', 'オレンジ系', 'ベージュ系', 'ブラウン系', '白系', '黒系', '青系', '紫系', '緑系', '黄系', 'ゴールド系', 'シルバー系', 'クリア', 'マルチ'];
-  const textureTags = ['ツヤ', 'マット', 'シアー', 'ミルキー', 'ラメ', 'フラッシュ', 'マグネット', 'パール', 'メタリック', 'ホロ'];
+  const textureTags = ['ツヤ', 'マット', 'シアー', 'ラメ', 'フラッシュ', 'マグネット', 'パール', 'メタリック', 'ホロ'];
   const tagsOf = s => String(s || '').split(/[,、]\s*/).map(t => t.trim()).filter(Boolean);
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const configured = () => !!cfg.API_URL;
