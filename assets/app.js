@@ -121,11 +121,13 @@ const ND = (() => {
         <p class="note" id="nd-status" style="margin:4px 0 0"></p>
         <input type="hidden" name="photo" value="${esc(v.photo)}">
         </div>
-        ${item && opts.onDelete ? '<div class="form-del"><button type="button" id="nd-delete">この持ち物を削除</button></div>' : ''}
+        ${item && (opts.onDelete || opts.onUnlink) ? `<div class="form-del">${opts.onUnlink ? '<button type="button" id="nd-unlink">このデザインから外す</button>' : ''}${opts.onDelete ? '<button type="button" id="nd-delete">この持ち物を削除</button>' : ''}</div>` : ''}
         <div class="form-foot"><button type="button" id="nd-cancel">キャンセル</button><button type="submit">保存</button></div>
       </form>`;
     document.body.appendChild(dlg);
     dlg.querySelector('#nd-cancel').onclick = () => dlg.close();
+    const unl = dlg.querySelector('#nd-unlink');
+    if (unl) unl.onclick = () => { dlg.close(); opts.onUnlink(); };
     const del = dlg.querySelector('#nd-delete');
     if (del) del.onclick = () => {
       if (!confirm(`「${v.name}」を削除しますか？`)) return;

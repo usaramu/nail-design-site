@@ -224,7 +224,7 @@ html:has(dialog[open]) { overflow: hidden; }
   flex-shrink: 0; display: flex; gap: 10px; background: var(--surface);
   padding: 12px 20px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line);
 }
-.form-del { padding: 0 20px 14px; flex-shrink: 0; }
+.form-del { padding: 0 20px 14px; flex-shrink: 0; display: flex; gap: 18px; flex-wrap: wrap; }
 .form-del button { border: 0; padding: 4px 0; font-size: .8rem; color: var(--rose, #b23a4e); background: transparent; text-decoration: underline; text-underline-offset: 3px; }
 .form-del button:hover { background: transparent; color: #8a1f33; }
 .form-foot button { flex: 1; padding: 12px 8px; border-radius: 10px; font-size: .92rem; }

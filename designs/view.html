@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>デザイン</title>
-  <link rel="stylesheet" href="../assets/style.css?v=202611102042">
+  <link rel="stylesheet" href="../assets/style.css?v=202611102045">
   <style>
     .design { border-top: 1px solid var(--line); padding: 14px 0 0; margin-bottom: 8px; }
     .design > summary {
@@ -146,6 +146,9 @@
     .usenames li { font-size: .78rem; padding: 2px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); }
     .usenames li.own { border-color: var(--gold); }
     .usenames li.need { border-style: dashed; border-color: var(--bordeaux); color: var(--bordeaux); }
+    .usenames li { display: inline-flex; align-items: center; gap: 2px; padding-right: 4px; }
+    .usenames li button { border: 0; background: transparent; color: var(--muted); font-size: .9rem; line-height: 1; padding: 0 4px; border-radius: 50%; }
+    .usenames li button:hover { background: transparent; color: var(--bordeaux); }
     .usenames li.none { border: 0; background: transparent; color: var(--muted); padding: 0; }
   </style>
 </head>
@@ -160,8 +163,8 @@
 
   <p id="msg" class="note"></p>
 
-  <script src="../assets/config.js?v=202611102042"></script>
-  <script src="../assets/app.js?v=202611102042"></script>
+  <script src="../assets/config.js?v=202611102045"></script>
+  <script src="../assets/app.js?v=202611102045"></script>
   <script>
     const $ = s => document.querySelector(s);
     let items = [];
@@ -278,7 +281,7 @@
               <h3>使うもの一覧<span class="meta" style="font-weight:400;margin-left:8px">${need.length ? need.length : ''}</span></h3>
               ${need.length ? `
 
-                <ul class="uselist">${[...have, ...tobuy].map(useRow).join('')}</ul>
+                <ul class="uselist">${sortUses(need).map(useRow).join('')}</ul>
                 ${tobuy.length ? '<p class="tolist"><a href="../tools/shopping.html">購入リストを開く ›</a></p>' : ''}
               ` : '<p class="uses-empty">まだ選んでいません</p>'}
               <p class="btnrow"><button type="button" class="choose main" data-wizard>＋ 使うものを入力</button>
@@ -296,6 +299,18 @@
       <g fill="#fff" stroke="#fff" stroke-width="3.4" stroke-linejoin="round">${bunnyShapes}</g>
       <g fill="#f5bccb">${bunnyShapes}</g>
       <g fill="#ec96ab"><rect x="7.4" y="4" width="1.8" height="8" rx=".9" transform="rotate(-11 8.3 15)"/><rect x="14.8" y="4" width="1.8" height="8" rx=".9" transform="rotate(11 15.7 15)"/></g></svg>`;
+
+    // 並び順：ジェル → パーツ。同じ種類の中では、持っているもの → まだ買っていないもの
+    const sortUses = list => [...list].sort((a, b) =>
+      (KINDS.indexOf(a.category) - KINDS.indexOf(b.category)) ||
+      ((a.status === '持ち物' ? 0 : 1) - (b.status === '持ち物' ? 0 : 1)));
+
+    // デザインから外す（持ち物そのものは消さない）
+    function unlink(i) {
+      i.designs = ND.designsOf(i).filter(k => k !== KEY).join(', ');
+      render();
+      ND.later(() => ND.send('update', { id: i.id, fields: { designs: i.designs } }), reload);
+    }
 
     // 使うもの一覧の1行：・名前　写真（まだ買っていないものは点線の丸）
     const useRow = i => {
@@ -565,7 +580,7 @@
           Object.assign(i, f);
           render();
           ND.later(() => ND.send('update', { id: i.id, fields: f }), reload);
-        }, { onDelete: () => { ND.removeItem(i, reload); render(); } });
+        }, { onUnlink: () => unlink(i), onDelete: () => { ND.removeItem(i, reload); render(); } });
       }
       const bt = e.target.closest('[data-bought]');
       if (bt) {
@@ -629,13 +644,20 @@
       d.querySelector('[data-tclear]').onclick = () => { thumb = ''; showT(); };
       // 使うもの：今の一覧を出し、入力・選び直しをこのシートの上で開く
       const showUses = () => {
-        const list = items.filter(i => i.status !== '削除' && KINDS.includes(i.category) && ND.designsOf(i).includes(KEY));
+        const list = sortUses(items.filter(i => i.status !== '削除' && KINDS.includes(i.category) && ND.designsOf(i).includes(KEY)));
         d.querySelector('[data-ucount]').textContent = list.length ? ` ${list.length}` : '';
         d.querySelector('[data-unames]').innerHTML = list.length
-          ? list.map(i => `<li class="${i.status === '持ち物' ? 'own' : 'need'}">${ND.esc(i.name)}</li>`).join('')
+          ? list.map(i => `<li class="${i.status === '持ち物' ? 'own' : 'need'}">${ND.esc(i.name)}<button type="button" data-unlink="${ND.esc(i.id)}" aria-label="${ND.esc(i.name)}を外す">×</button></li>`).join('')
           : '<li class="none">まだありません</li>';
       };
       showUses();
+      // ×でこのデザインから外す
+      d.querySelector('[data-unames]').addEventListener('click', e => {
+        const b = e.target.closest('[data-unlink]');
+        if (!b) return;
+        const i = items.find(x => x.id === b.dataset.unlink);
+        if (i) { unlink(i); showUses(); }
+      });
       d.querySelector('[data-ewizard]').onclick = () => openWizard(showUses);
       d.querySelector('[data-epick]').onclick = () => {
         const current = items.filter(i => ND.designsOf(i).includes(KEY)).map(i => i.id);
