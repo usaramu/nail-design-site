@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>デザイン</title>
-  <link rel="stylesheet" href="../assets/style.css?v=202611102016">
+  <link rel="stylesheet" href="../assets/style.css?v=202611102024">
   <style>
     .design { border-top: 1px solid var(--line); padding: 14px 0 0; margin-bottom: 8px; }
     .design > summary {
@@ -62,6 +62,27 @@
     }
     #picker .opt.on .ck { display: block; }
     #picker .count { font-size: .78rem; color: var(--muted); font-weight: 400; margin-left: 8px; }
+    /* 使うもの：そろい具合と、持っている／これから買う の2つに分ける */
+    .summary { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; margin: 4px 0 6px; }
+    .snum { font-size: .82rem; color: var(--muted); }
+    .snum b { font-size: 1.6rem; color: var(--bordeaux); font-family: var(--serif); margin-right: 2px; }
+    .snum span { font-size: 1rem; color: var(--ink); margin-right: 6px; }
+    .sbar { height: 6px; border-radius: 6px; background: var(--line); overflow: hidden; margin-top: 8px; }
+    .sbar span { display: block; height: 100%; background: var(--gold); border-radius: 6px; }
+    h4.sec { display: flex; align-items: center; gap: 8px; font-size: .9rem; margin: 22px 0 10px; font-weight: 700; }
+    h4.sec small { font-weight: 400; color: var(--muted); font-size: .8rem; }
+    h4.sec .dot { width: 9px; height: 9px; border-radius: 50%; }
+    h4.sec.ok { color: var(--ink); } h4.sec.ok .dot { background: var(--gold); }
+    h4.sec.ng { color: var(--bordeaux); } h4.sec.ng .dot { background: transparent; border: 2px solid var(--bordeaux); }
+    .use .usa { position: absolute; top: -6px; left: calc(50% + 12px); width: 20px; height: 24px; transform: rotate(10deg); filter: drop-shadow(0 2px 3px rgba(122,31,43,.22)); }
+    .tobuy { list-style: none; margin: 0; padding: 0; border-top: 1px dashed var(--line); }
+    .tobuy li { display: flex; align-items: center; gap: 12px; padding: 10px 2px; border-bottom: 1px dashed var(--line); }
+    .tobuy .ph { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; flex-shrink: 0; background: var(--paper); border: 1px dashed var(--bordeaux); }
+    .tobuy img.ph { border: 0; opacity: .6; }
+    .tobuy .bt { flex: 1; min-width: 0; }
+    .tobuy .bn { display: block; font-size: .9rem; line-height: 1.5; }
+    .tobuy small { display: block; font-size: .72rem; color: var(--muted); }
+    .tolist { margin: 10px 0 0; font-size: .82rem; }
   </style>
 </head>
 <body>
@@ -74,8 +95,8 @@
 
   <p id="msg" class="note"></p>
 
-  <script src="../assets/config.js?v=202611102016"></script>
-  <script src="../assets/app.js?v=202611102016"></script>
+  <script src="../assets/config.js?v=202611102024"></script>
+  <script src="../assets/app.js?v=202611102024"></script>
   <script>
     const $ = s => document.querySelector(s);
     let items = [];
@@ -164,8 +185,8 @@
         const have = need.filter(i => i.status === '持ち物');
         const missing = need.filter(i => i.status === '購入リスト');
         const low = have.filter(i => i.low);
-        const uses = need.filter(i => KINDS.includes(i.category));
-        const others = need.filter(i => !KINDS.includes(i.category) && i.status === '購入リスト');
+        const tobuy = need.filter(i => i.status === '購入リスト');
+        const pct = need.length ? Math.round(have.length / need.length * 100) : 0;
         const line = list => list.length
           ? list.map(i => `<li>${ND.esc(i.name)}${i.color ? '（' + ND.esc(i.color) + '）' : ''}</li>`).join('')
           : '<li>なし</li>';
@@ -187,21 +208,47 @@
               <h3>指示画像</h3>
               <div class="steps">${steps}</div>
 
-              <h3>使うもの<span class="meta" style="font-weight:400;margin-left:8px">持っている ${have.length} / ${need.length}</span></h3>
-              ${uses.length ? `<div class="uses">${uses.map(useTile).join('')}</div>` : '<p class="uses-empty">まだ選んでいません</p>'}
-              <button type="button" class="choose" data-choose="${ND.esc(key)}">使うものを選ぶ</button>
-              ${others.length ? `<h3>そのほか必要なもの</h3><ul class="meta">${line(others)}</ul>` : ''}
-              ${low.length ? `<h3>残り少なめ</h3><ul class="meta">${line(low)}</ul>` : ''}
+              <h3>使うもの</h3>
+              ${need.length ? `
+                <div class="summary">
+                  <div class="snum"><b>${have.length}</b><span> / ${need.length}</span> そろっている</div>
+                  <div class="sbar"><span style="width:${pct}%"></span></div>
+                </div>
+
+                <h4 class="sec ok"><span class="dot"></span>持っているもの<small>${have.length}</small></h4>
+                ${have.length ? `<div class="uses">${have.map(useTile).join('')}</div>` : '<p class="uses-empty">まだありません</p>'}
+
+                <h4 class="sec ng"><span class="dot"></span>これから買うもの<small>${tobuy.length}</small></h4>
+                ${tobuy.length ? `<ul class="tobuy">${tobuy.map(buyRow).join('')}</ul>
+                  <p class="tolist"><a href="../tools/shopping.html">購入リストを開く ›</a></p>` : '<p class="uses-empty">全部そろっています</p>'}
+              ` : '<p class="uses-empty">まだ選んでいません</p>'}
+              <p><button type="button" class="choose" data-choose="${ND.esc(key)}">使うものを選ぶ</button></p>
           </div>`;
       }).join('');
     }
 
+    // 少なめのうさぎ（持ち物リストと同じ形）
+    const bunnyShapes = `
+        <rect x="5.6" y="1.6" width="5.4" height="13.5" rx="2.7" transform="rotate(-11 8.3 15)"/>
+        <rect x="13" y="1.6" width="5.4" height="13.5" rx="2.7" transform="rotate(11 15.7 15)"/>
+        <ellipse cx="12" cy="19.4" rx="8" ry="7.2"/>`;
+    const bunny = () => `<svg class="usa" viewBox="-1 -1 26 30" role="img" aria-label="すくなめ"><title>すくなめ</title>
+      <g fill="#fff" stroke="#fff" stroke-width="3.4" stroke-linejoin="round">${bunnyShapes}</g>
+      <g fill="#f5bccb">${bunnyShapes}</g>
+      <g fill="#ec96ab"><rect x="7.4" y="4" width="1.8" height="8" rx=".9" transform="rotate(-11 8.3 15)"/><rect x="14.8" y="4" width="1.8" height="8" rx=".9" transform="rotate(11 15.7 15)"/></g></svg>`;
+
+    // 持っているもの：丸い写真
     const useTile = i => `
-      <div class="use${i.status === '持ち物' ? '' : ' not-owned'}">
-        ${ph(i)}
+      <div class="use">
+        ${ph(i)}${i.low ? bunny() : ''}
         <span class="nm">${ND.esc(i.name)}</span>
-        ${i.status === '持ち物' ? '' : '<span class="buy">未購入</span>'}
       </div>`;
+
+    // これから買うもの：小さな丸＋名前＋カテゴリ・購入先
+    const buyRow = i => `
+      <li>${ph(i)}
+        <span class="bt"><span class="bn">${ND.esc(i.name)}</span><small>${ND.esc([i.category, i.color, i.shop].filter(Boolean).join(' ／ '))}</small></span>
+      </li>`;
 
     // 使うものを選ぶシート（ジェル・パーツを丸で並べて、タップで選ぶ）
     function openPicker(selected, title, onDone) {
