@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>指示プロンプト</title>
-  <link rel="stylesheet" href="../assets/style.css?v=202611102051">
+  <link rel="stylesheet" href="../assets/style.css?v=202611110238">
   <style>
     /* タイトルだけの一覧。タップで本文とボタンが開く */
     #list { border-bottom: 1px solid var(--line); }
@@ -38,8 +38,8 @@
   <div id="list"></div>
   <p id="msg" class="note"></p>
 
-  <script src="../assets/config.js?v=202611102051"></script>
-  <script src="../assets/app.js?v=202611102051"></script>
+  <script src="../assets/config.js?v=202611110238"></script>
+  <script src="../assets/app.js?v=202611110238"></script>
   <script>
     const $ = s => document.querySelector(s);
     let prompts = [];
@@ -118,7 +118,7 @@
           <div class="form-head" tabindex="-1" autofocus><h3>${p ? '編集' : '追加'}</h3></div>
           <div class="form-body">
             <label>タイトル<input name="title" required value="${ND.esc(p?.title || '')}"></label>
-            <label>プロンプト本文<textarea name="body" required rows="12">${ND.esc(p?.body || '')}</textarea></label>
+            <label class="grow">プロンプト本文<textarea name="body" required>${ND.esc(p?.body || '')}</textarea></label>
             <p class="insert"><button type="button" id="pr-inv">＋ 持ち物を差し込む</button></p>
           </div>
           <div class="form-foot"><button type="button" id="pr-cancel">キャンセル</button><button type="submit">保存</button></div>
@@ -147,7 +147,20 @@
         dlg.close();
         render();
       };
+      // iPhone のキーボードが出ても、見えている範囲にぴったり収める
+      const vv = window.visualViewport;
+      const fit = () => {
+        if (!vv) return;
+        dlg.style.height = vv.height + 'px';
+        dlg.style.top = vv.offsetTop + 'px';
+      };
+      if (vv) { vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit); }
+      dlg.addEventListener('close', () => {
+        if (vv) { vv.removeEventListener('resize', fit); vv.removeEventListener('scroll', fit); }
+        dlg.remove();
+      });
       dlg.showModal();
+      fit();
     }
 
     $('#add').onclick = () => openForm(null);
