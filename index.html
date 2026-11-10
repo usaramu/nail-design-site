@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>うさつめ</title>
-  <link rel="stylesheet" href="assets/style.css?v=202611101830">
+  <link rel="stylesheet" href="assets/style.css?v=202611101838">
 </head>
 <body>
   <h1>うさつめ</h1>
@@ -41,18 +41,18 @@
     <p style="margin:10px 0 0"><a href="tools/shopping.html">購入リストで補充する</a></p>
   </div>
 
-  <script src="assets/config.js?v=202611101830"></script>
-  <script src="assets/app.js?v=202611101830"></script>
+  <script src="assets/config.js?v=202611101838"></script>
+  <script src="assets/app.js?v=202611101838"></script>
   <script>
     (async () => {
       if (!ND.configured()) return;
       try {
-        const items = await ND.list();
-        const low = items.filter(i => i.status === '持ち物' && i.low);
-        if (!low.length) return;
-        document.querySelector('#lowlist').innerHTML = low
-          .map(i => `<li>${ND.esc(i.name)}${i.color ? '（' + ND.esc(i.color) + '）' : ''}</li>`).join('');
-        document.querySelector('#lowbox').hidden = false;
+        await ND.listFast(null, items => {
+          const low = items.filter(i => i.status === '持ち物' && i.low);
+          document.querySelector('#lowlist').innerHTML = low
+            .map(i => `<li>${ND.esc(i.name)}${i.color ? '（' + ND.esc(i.color) + '）' : ''}</li>`).join('');
+          document.querySelector('#lowbox').hidden = !low.length;
+        });
       } catch (e) { /* 読み込めなくてもトップは表示する */ }
     })();
   </script>

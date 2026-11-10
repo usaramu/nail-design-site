@@ -16,6 +16,25 @@ const ND = (() => {
     return (await r.json()).map(norm);
   }
 
+  // すぐ表示するための控え（この端末に保存）。まず控えを出し、裏で最新を取ってきて差し替える
+  let dirty = false; // 変更を送った直後は古い控えを出さない
+  const cacheKey = sheet => 'nd_cache_' + (sheet || 'items');
+  async function listFast(sheet, onData) {
+    let shown = null;
+    if (!dirty) {
+      try {
+        shown = localStorage.getItem(cacheKey(sheet));
+        if (shown) onData(JSON.parse(shown).map(norm));
+      } catch (e) { shown = null; }
+    }
+    const url = cfg.API_URL + (sheet ? '?sheet=' + encodeURIComponent(sheet) : '');
+    const r = await fetch(url, { cache: 'no-store' });
+    const text = await r.text();
+    dirty = false;
+    try { localStorage.setItem(cacheKey(sheet), text); } catch (e) { /* 容量オーバーなどは無視 */ }
+    if (text !== shown) onData(JSON.parse(text).map(norm));
+  }
+
   // 文字列をクリップボードにコピー（非対応の端末でも動くように予備の方法を用意）
   async function copyText(text) {
     try {
@@ -55,6 +74,7 @@ const ND = (() => {
       throw new Error('合言葉が違います。もう一度操作すると入力し直せます');
     }
     if (j.error) throw new Error(j.error);
+    dirty = true;
     return j;
   }
 
@@ -188,5 +208,5 @@ const ND = (() => {
     return res.url;
   }
 
-  return { cfg, configured, esc, categories, colorTags, textureTags, tagsOf, list, send, openEditor, designsOf, lightbox, uploadPhoto, photoDataUrl, copyText };
+  return { cfg, configured, esc, categories, colorTags, textureTags, tagsOf, list, listFast, send, openEditor, designsOf, lightbox, uploadPhoto, photoDataUrl, copyText };
 })();

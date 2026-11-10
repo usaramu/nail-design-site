@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>デザイン一覧</title>
-  <link rel="stylesheet" href="../assets/style.css?v=202611101830">
+  <link rel="stylesheet" href="../assets/style.css?v=202611101838">
   <style>
     .design { border-top: 1px solid var(--line); padding: 14px 0 0; margin-bottom: 8px; }
     .design > summary {
@@ -54,8 +54,8 @@
 
   <p id="msg" class="note"></p>
 
-  <script src="../assets/config.js?v=202611101830"></script>
-  <script src="../assets/app.js?v=202611101830"></script>
+  <script src="../assets/config.js?v=202611101838"></script>
+  <script src="../assets/app.js?v=202611101838"></script>
   <script>
     const $ = s => document.querySelector(s);
     let items = [];
@@ -85,10 +85,11 @@
         return;
       }
       try {
-        items = await ND.list();
-        try { images = await ND.list('designimages'); } catch (e) { images = []; }
-        render();
-        renderPick();
+        let loaded = false;
+        await Promise.all([
+          ND.listFast(null, d => { items = d; loaded = true; render(); renderPick(); }),
+          ND.listFast('designimages', d => { images = d; if (loaded) render(); }).catch(() => { images = []; })
+        ]);
       } catch (e) {
         $('#msg').textContent = '読み込みに失敗しました: ' + e.message;
       }
