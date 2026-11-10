@@ -77,20 +77,13 @@
     .tip .lbl { font-size: .74rem; }
     #sheet .lbl { font-size: 1.1rem; cursor: default; }
     .nm { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: .7rem; line-height: 1.45; color: var(--muted); }
-    /* 少なめ：丸に耳がついただけの、小さなうさぎアイコン */
+    /* 少なめ：丸に耳がついただけの、小さなうさぎアイコン（SVG） */
     .usa {
-      position: absolute; top: 4px; left: calc(50% + 18px); z-index: 1;
-      width: 16px; height: 16px; padding: 0; border-radius: 50%;
-      background: #f6c9d2; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(122, 31, 43, .2);
-      transform: rotate(12deg);
+      position: absolute; top: -2px; left: calc(50% + 16px); z-index: 1;
+      width: 22px; height: 25px; transform: rotate(10deg);
+      filter: drop-shadow(0 2px 3px rgba(122, 31, 43, .25));
     }
-    .usa::before, .usa::after {
-      content: ''; position: absolute; top: -10px; width: 6px; height: 11px;
-      background: #f6c9d2; border: 2px solid #fff; border-bottom: 0; border-radius: 6px 6px 3px 3px;
-    }
-    .usa::before { left: -1px; transform: rotate(-12deg); }
-    .usa::after { left: 6px; transform: rotate(12deg); }
-    .usa.inline { position: relative; top: auto; left: auto; display: inline-block; flex-shrink: 0; margin: 8px 4px 0 6px; transform: none; vertical-align: middle; }
+    .usa.inline { position: relative; top: auto; left: auto; display: inline-block; flex-shrink: 0; margin: 0 2px 0 6px; transform: none; vertical-align: middle; }
 
     /* パーツ：仕切りのあるパーツケースのように */
     .tray {
@@ -101,7 +94,7 @@
     .cell:hover { background: var(--paper); color: var(--ink); }
     .cell .sq { display: block; width: 100%; aspect-ratio: 1 / 1; border-radius: 10px; object-fit: cover; background: var(--paper); margin-bottom: 8px; border: 1px dashed var(--gold); }
     .cell img.sq { border: 0; }
-    .cell .usa { top: 14px; left: auto; right: 10px; }
+    .cell .usa { top: 6px; left: auto; right: 8px; }
 
     /* ツール・基本用品：細い行 */
     .lines { list-style: none; margin: 0; padding: 0; }
@@ -159,7 +152,6 @@
     #sheet h3 { font-family: var(--serif); font-weight: 700; font-size: 1.1rem; color: var(--ink); margin: 0 0 8px; line-height: 1.5; }
     #sheet .tg { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 4px; padding-top: 8px; }
     #sheet .tg span { font-size: .7rem; padding: 0 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
-    #sheet .tg span.usa { padding: 0; border: 2px solid #fff; border-radius: 50%; margin: 6px 4px 0 6px; }
     #sheet .tg span.c { border-color: var(--gold); color: var(--ink); }
     #sheet dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 18px 0 0; font-size: .86rem; }
     #sheet dt { color: var(--muted); }
@@ -203,6 +195,17 @@
     const tagsOfItem = i => i.category === 'パーツ'
       ? (i.parttype ? [String(i.parttype)] : [])
       : [...ND.tagsOf(i.colortag), ...ND.tagsOf(i.texture)];
+    // 少なめのうさぎ（丸い顔＋耳2本）
+    const bunny = (extra = '') => `<svg class="usa ${extra}" viewBox="0 0 24 27" role="img" aria-label="すくなめ"><title>すくなめ</title>
+      <g fill="#f6c9d2" stroke="#fff" stroke-width="2" stroke-linejoin="round">
+        <ellipse cx="7.6" cy="8" rx="3.2" ry="6.8" transform="rotate(-12 7.6 14)"/>
+        <ellipse cx="16.4" cy="8" rx="3.2" ry="6.8" transform="rotate(12 16.4 14)"/>
+        <circle cx="12" cy="18.2" r="7.6"/>
+      </g>
+      <g fill="#eaa2b3">
+        <ellipse cx="7.6" cy="8.4" rx="1.2" ry="4" transform="rotate(-12 7.6 14)"/>
+        <ellipse cx="16.4" cy="8.4" rx="1.2" ry="4" transform="rotate(12 16.4 14)"/>
+      </g></svg>`;
     const photoSrc = p => /^(https?:|data:)/.test(p) ? p : '../' + p;
     // 写真欄が「text:ベース」のときは、写真の代わりに文字の丸を出す
     const textOf = p => String(p || '').startsWith('text:') ? String(p).slice(5) : '';
@@ -258,7 +261,7 @@
     const tip = i => `
       <button class="tip" data-id="${ND.esc(i.id)}" aria-label="${ND.esc(i.name)}">
         ${i.photo ? visual(i, 'shape') : '<span class="shape"></span>'}
-        ${i.low ? '<span class="usa" title="すくなめ" aria-label="すくなめ"></span>' : ''}
+        ${i.low ? bunny() : ''}
         ${i.photo ? "" : `<span class="nm">${ND.esc(i.name)}</span>`}
         ${ND.tagsOf(i.texture).length ? `<span class="tx">${ND.tagsOf(i.texture).map(t => '#' + ND.esc(t)).join(' ')}</span>` : ''}
       </button>`;
@@ -266,13 +269,13 @@
     const cell = i => `
       <button class="cell" data-id="${ND.esc(i.id)}" aria-label="${ND.esc(i.name)}">
         ${i.photo ? visual(i, 'sq') : '<span class="sq"></span>'}
-        ${i.low ? '<span class="usa" title="すくなめ" aria-label="すくなめ"></span>' : ''}
+        ${i.low ? bunny() : ''}
         ${i.photo ? "" : `<span class="nm">${ND.esc(i.name)}</span>`}
         ${i.parttype ? `<span class="tx">#${ND.esc(i.parttype)}</span>` : ''}
       </button>`;
 
     const line = i => `
-      <li><button data-id="${ND.esc(i.id)}"><span class="mark"></span><span class="nm2">${ND.esc(i.name)}</span>${i.low ? '<span class="usa inline" title="すくなめ" aria-label="すくなめ"></span>' : ''}</button></li>`;
+      <li><button data-id="${ND.esc(i.id)}"><span class="mark"></span><span class="nm2">${ND.esc(i.name)}</span>${i.low ? bunny('inline') : ''}</button></li>`;
 
     // 詳細シート
     function openSheet(i) {
@@ -292,7 +295,7 @@
           ${photo}
           <div>
             <h3>${ND.esc(i.name)}</h3>
-            <div class="tg">${i.category === 'パーツ' && i.parttype ? `<span class="c">${ND.esc(i.parttype)}</span>` : ''}${i.category === 'パーツ' ? '' : ND.tagsOf(i.colortag).map(t => `<span class="c">${ND.esc(t)}</span>`).join('') + ND.tagsOf(i.texture).map(t => `<span>${ND.esc(t)}</span>`).join('')}${i.low ? '<span class="usa inline" title="すくなめ" aria-label="すくなめ"></span>' : ''}</div>
+            <div class="tg">${i.category === 'パーツ' && i.parttype ? `<span class="c">${ND.esc(i.parttype)}</span>` : ''}${i.category === 'パーツ' ? '' : ND.tagsOf(i.colortag).map(t => `<span class="c">${ND.esc(t)}</span>`).join('') + ND.tagsOf(i.texture).map(t => `<span>${ND.esc(t)}</span>`).join('')}${i.low ? bunny('inline') : ''}</div>
           </div>
         </div>
         ${rows ? `<dl>${rows}</dl>` : ''}
