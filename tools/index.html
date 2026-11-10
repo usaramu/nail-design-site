@@ -77,21 +77,20 @@
     .tip .lbl { font-size: .74rem; }
     #sheet .lbl { font-size: 1.1rem; cursor: default; }
     .nm { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: .7rem; line-height: 1.45; color: var(--muted); }
-    /* 少なめ：うさ耳つきの小さなシール */
+    /* 少なめ：丸に耳がついただけの、小さなうさぎアイコン */
     .usa {
-      position: absolute; top: 0; left: calc(50% + 6px); z-index: 1;
-      transform: rotate(10deg); transform-origin: left bottom;
-      font-size: .58rem; font-weight: 700; line-height: 1.6; letter-spacing: .04em; white-space: nowrap;
-      color: var(--bordeaux); background: #fbdbe2; border: 1.5px solid #fff; border-radius: 999px;
-      padding: 0 7px; box-shadow: 0 2px 5px rgba(122, 31, 43, .18);
+      position: absolute; top: 4px; left: calc(50% + 18px); z-index: 1;
+      width: 16px; height: 16px; padding: 0; border-radius: 50%;
+      background: #f6c9d2; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(122, 31, 43, .2);
+      transform: rotate(12deg);
     }
     .usa::before, .usa::after {
-      content: ''; position: absolute; top: -8px; width: 6px; height: 10px;
-      background: #fbdbe2; border: 1.5px solid #fff; border-bottom: 0; border-radius: 6px 6px 2px 2px;
+      content: ''; position: absolute; top: -10px; width: 6px; height: 11px;
+      background: #f6c9d2; border: 2px solid #fff; border-bottom: 0; border-radius: 6px 6px 3px 3px;
     }
-    .usa::before { left: 8px; transform: rotate(-14deg); }
-    .usa::after { left: 17px; transform: rotate(14deg); }
-    .usa.inline { position: relative; top: auto; left: auto; transform: none; margin: 8px 0 0 4px; display: inline-block; box-shadow: none; }
+    .usa::before { left: -1px; transform: rotate(-12deg); }
+    .usa::after { left: 6px; transform: rotate(12deg); }
+    .usa.inline { position: relative; top: auto; left: auto; display: inline-block; flex-shrink: 0; margin: 8px 4px 0 6px; transform: none; vertical-align: middle; }
 
     /* パーツ：仕切りのあるパーツケースのように */
     .tray {
@@ -102,7 +101,7 @@
     .cell:hover { background: var(--paper); color: var(--ink); }
     .cell .sq { display: block; width: 100%; aspect-ratio: 1 / 1; border-radius: 10px; object-fit: cover; background: var(--paper); margin-bottom: 8px; border: 1px dashed var(--gold); }
     .cell img.sq { border: 0; }
-    .cell .usa { top: 10px; left: auto; right: 4px; }
+    .cell .usa { top: 14px; left: auto; right: 10px; }
 
     /* ツール・基本用品：細い行 */
     .lines { list-style: none; margin: 0; padding: 0; }
@@ -160,7 +159,7 @@
     #sheet h3 { font-family: var(--serif); font-weight: 700; font-size: 1.1rem; color: var(--ink); margin: 0 0 8px; line-height: 1.5; }
     #sheet .tg { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 4px; padding-top: 8px; }
     #sheet .tg span { font-size: .7rem; padding: 0 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
-    #sheet .tg span.usa { font-size: .66rem; color: var(--bordeaux); border: 1.5px solid #fff; padding: 0 8px; margin: 0 0 0 2px; }
+    #sheet .tg span.usa { padding: 0; border: 2px solid #fff; border-radius: 50%; margin: 6px 4px 0 6px; }
     #sheet .tg span.c { border-color: var(--gold); color: var(--ink); }
     #sheet dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 18px 0 0; font-size: .86rem; }
     #sheet dt { color: var(--muted); }
@@ -259,7 +258,7 @@
     const tip = i => `
       <button class="tip" data-id="${ND.esc(i.id)}" aria-label="${ND.esc(i.name)}">
         ${i.photo ? visual(i, 'shape') : '<span class="shape"></span>'}
-        ${i.low ? '<span class="usa">すくなめ</span>' : ''}
+        ${i.low ? '<span class="usa" title="すくなめ" aria-label="すくなめ"></span>' : ''}
         ${i.photo ? "" : `<span class="nm">${ND.esc(i.name)}</span>`}
         ${ND.tagsOf(i.texture).length ? `<span class="tx">${ND.tagsOf(i.texture).map(t => '#' + ND.esc(t)).join(' ')}</span>` : ''}
       </button>`;
@@ -267,13 +266,13 @@
     const cell = i => `
       <button class="cell" data-id="${ND.esc(i.id)}" aria-label="${ND.esc(i.name)}">
         ${i.photo ? visual(i, 'sq') : '<span class="sq"></span>'}
-        ${i.low ? '<span class="usa">すくなめ</span>' : ''}
+        ${i.low ? '<span class="usa" title="すくなめ" aria-label="すくなめ"></span>' : ''}
         ${i.photo ? "" : `<span class="nm">${ND.esc(i.name)}</span>`}
         ${i.parttype ? `<span class="tx">#${ND.esc(i.parttype)}</span>` : ''}
       </button>`;
 
     const line = i => `
-      <li><button data-id="${ND.esc(i.id)}"><span class="mark"></span><span class="nm2">${ND.esc(i.name)}</span>${i.low ? '<span class="usa inline">すくなめ</span>' : ''}</button></li>`;
+      <li><button data-id="${ND.esc(i.id)}"><span class="mark"></span><span class="nm2">${ND.esc(i.name)}</span>${i.low ? '<span class="usa inline" title="すくなめ" aria-label="すくなめ"></span>' : ''}</button></li>`;
 
     // 詳細シート
     function openSheet(i) {
@@ -293,7 +292,7 @@
           ${photo}
           <div>
             <h3>${ND.esc(i.name)}</h3>
-            <div class="tg">${i.category === 'パーツ' && i.parttype ? `<span class="c">${ND.esc(i.parttype)}</span>` : ''}${i.category === 'パーツ' ? '' : ND.tagsOf(i.colortag).map(t => `<span class="c">${ND.esc(t)}</span>`).join('') + ND.tagsOf(i.texture).map(t => `<span>${ND.esc(t)}</span>`).join('')}${i.low ? '<span class="usa inline">すくなめ</span>' : ''}</div>
+            <div class="tg">${i.category === 'パーツ' && i.parttype ? `<span class="c">${ND.esc(i.parttype)}</span>` : ''}${i.category === 'パーツ' ? '' : ND.tagsOf(i.colortag).map(t => `<span class="c">${ND.esc(t)}</span>`).join('') + ND.tagsOf(i.texture).map(t => `<span>${ND.esc(t)}</span>`).join('')}${i.low ? '<span class="usa inline" title="すくなめ" aria-label="すくなめ"></span>' : ''}</div>
           </div>
         </div>
         ${rows ? `<dl>${rows}</dl>` : ''}
