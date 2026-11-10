@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>デザイン</title>
-  <link rel="stylesheet" href="../assets/style.css?v=202611102005">
+  <link rel="stylesheet" href="../assets/style.css?v=202611102009">
   <style>
     .design { border-top: 1px solid var(--line); padding: 14px 0 0; margin-bottom: 8px; }
     .design > summary {
@@ -21,7 +21,8 @@
     .step .empty-img { border: 1px dashed var(--line); padding: 36px 0; text-align: center; color: var(--muted); font-size: .85rem; }
     .step figcaption { font-size: .8rem; color: var(--muted); margin: 8px 0 6px; }
     .step input[type=file] { display: none; }
-    .guide-link { font-size: .85rem; }
+    .ops { margin: -6px 0 6px; display: flex; gap: 8px; }
+    .ops button { border-radius: 999px; font-size: .78rem; padding: 4px 14px; }
 
     /* 使うもの：丸い写真で並べる */
     .uses { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 14px 8px; margin: 6px 0 10px; }
@@ -66,14 +67,15 @@
 <body>
   <p><a href="index.html">← デザイン一覧へ戻る</a></p>
   <h1 id="title">デザイン</h1>
+  <p class="ops" id="ops"><button type="button" id="rename">編集</button> <button type="button" id="remove">削除</button></p>
 
   <div id="list"></div>
 
 
   <p id="msg" class="note"></p>
 
-  <script src="../assets/config.js?v=202611102005"></script>
-  <script src="../assets/app.js?v=202611102005"></script>
+  <script src="../assets/config.js?v=202611102009"></script>
+  <script src="../assets/app.js?v=202611102009"></script>
   <script>
     const $ = s => document.querySelector(s);
     let items = [];
@@ -126,11 +128,24 @@
       return d && d.defaults && d.defaults[slot] ? d.defaults[slot] : '';
     }
 
+    // デザインの名前・削除の印は、指示画像と同じ表（designimages）に NAME / HIDDEN として持つ
+    const metaOf = (key, slot) => String((images.find(x => x.design === key && x.slot === slot) || {}).url ?? '');
+    const nameOf = key => metaOf(key, 'NAME') || (DESIGNS[key] || {}).name || key;
+    const isHidden = key => metaOf(key, 'HIDDEN') === '1';
+    function setMeta(key, slot, url) {
+      const hit = images.find(x => x.design === key && x.slot === slot);
+      if (hit) hit.url = url; else images.push({ design: key, slot, url });
+    }
+
     function render() {
       const key = new URLSearchParams(location.search).get('d') || '';
-      const dd = DESIGNS[key] || { name: key || 'デザイン' };
-      document.title = dd.name;
-      $('#title').textContent = dd.name;
+      document.title = nameOf(key);
+      $('#title').textContent = nameOf(key);
+      if (isHidden(key)) {
+        $('#list').innerHTML = '<p class="done">このデザインは削除されました。</p>';
+        $('#ops').hidden = true;
+        return;
+      }
       $('#list').innerHTML = [key].map(key => {
         const d = DESIGNS[key] || { name: key };
         const need = items.filter(i => ND.designsOf(i).includes(key));
@@ -156,7 +171,6 @@
         }).join('');
         return `
           <div class="design-body">
-              ${d.page ? `<p class="guide-link"><a href="${d.page}">制作ガイドを開く</a></p>` : ''}
 
               <h3>指示画像</h3>
               <div class="steps">${steps}</div>
@@ -237,9 +251,8 @@
       const b = e.target.closest('button[data-choose]');
       if (!b) return;
       const key = b.dataset.choose;
-      const d = DESIGNS[key] || { name: key };
       const current = items.filter(i => ND.designsOf(i).includes(key)).map(i => i.id);
-      openPicker(current, d.name, sel => applyUses(key, sel));
+      openPicker(current, nameOf(key), sel => applyUses(key, sel));
     });
 
 
@@ -268,6 +281,51 @@
       }
       input.value = '';
     });
+
+    const KEY = new URLSearchParams(location.search).get('d') || '';
+
+    // 編集：デザイン名を変える
+    $('#rename').onclick = () => {
+      document.querySelector('#nd-dlg')?.remove();
+      const d = document.createElement('dialog');
+      d.id = 'nd-dlg';
+      d.innerHTML = `<form>
+          <div class="form-head" tabindex="-1" autofocus><h3>デザインを編集</h3></div>
+          <div class="form-body"><label>デザイン名<input name="name" required value="${ND.esc(nameOf(KEY))}"></label></div>
+          <div class="form-foot"><button type="button" data-x>キャンセル</button><button type="submit">保存</button></div>
+        </form>`;
+      document.body.appendChild(d);
+      d.querySelector('[data-x]').onclick = () => d.close();
+      d.querySelector('form').onsubmit = e => {
+        e.preventDefault();
+        const name = new FormData(e.target).get('name').trim();
+        if (!name) return;
+        setMeta(KEY, 'NAME', name);
+        d.close();
+        render();
+        ND.later(() => ND.send('setDesignImage', { design: KEY, slot: 'NAME', url: name }), reload);
+      };
+      d.showModal();
+    };
+
+    // 削除：デザインを一覧から消し、持ち物との紐づけも外す
+    $('#remove').onclick = async () => {
+      if (!confirm(`「${nameOf(KEY)}」を削除しますか？`)) return;
+      const b = $('#remove');
+      b.disabled = true;
+      b.textContent = '削除しています…';
+      try {
+        await ND.send('setDesignImage', { design: KEY, slot: 'HIDDEN', url: '1' });
+        for (const i of items.filter(i => ND.designsOf(i).includes(KEY))) {
+          await ND.send('update', { id: i.id, fields: { designs: ND.designsOf(i).filter(k => k !== KEY).join(', ') } });
+        }
+        location.href = 'index.html';
+      } catch (err) {
+        alert('削除できませんでした: ' + err.message);
+        b.disabled = false;
+        b.textContent = '削除';
+      }
+    };
 
     reload();
   </script>

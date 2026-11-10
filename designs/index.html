@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>デザイン一覧</title>
-  <link rel="stylesheet" href="../assets/style.css?v=202611102005">
+  <link rel="stylesheet" href="../assets/style.css?v=202611102009">
   <style>
     .design { border-top: 1px solid var(--line); padding: 14px 0 0; margin-bottom: 8px; }
     .design > summary {
@@ -108,8 +108,8 @@
 
   <p id="msg" class="note"></p>
 
-  <script src="../assets/config.js?v=202611102005"></script>
-  <script src="../assets/app.js?v=202611102005"></script>
+  <script src="../assets/config.js?v=202611102009"></script>
+  <script src="../assets/app.js?v=202611102009"></script>
   <script>
     const $ = s => document.querySelector(s);
     let items = [];
@@ -163,8 +163,18 @@
       return d && d.defaults && d.defaults[slot] ? d.defaults[slot] : '';
     }
 
+    // デザインの名前・削除の印は、指示画像と同じ表（designimages）に NAME / HIDDEN として持つ
+    const metaOf = (key, slot) => String((images.find(x => x.design === key && x.slot === slot) || {}).url ?? '');
+    const nameOf = key => metaOf(key, 'NAME') || (DESIGNS[key] || {}).name || key;
+    const isHidden = key => metaOf(key, 'HIDDEN') === '1';
+    function setMeta(key, slot, url) {
+      const hit = images.find(x => x.design === key && x.slot === slot);
+      if (hit) hit.url = url; else images.push({ design: key, slot, url });
+    }
+
     function render() {
-      const keys = [...new Set([...Object.keys(DESIGNS), ...items.flatMap(ND.designsOf)])];
+      const keys = [...new Set([...Object.keys(DESIGNS), ...items.flatMap(ND.designsOf), ...images.map(x => x.design)])]
+        .filter(k => k && !isHidden(k));
       if (!keys.length) {
         $('#list').innerHTML = '<p class="done">まだありません。</p>';
         return;
@@ -179,7 +189,7 @@
           <a class="dcard" href="view.html?d=${encodeURIComponent(key)}">
             ${src ? `<img src="${ND.esc(src)}" alt="" loading="lazy">` : '<span class="noimg"></span>'}
             <span class="info">
-              <span class="dname">${ND.esc(d.name)}</span>
+              <span class="dname">${ND.esc(nameOf(key))}</span>
               <span class="prog"><span style="width:${pct}%"></span></span>
               <span class="meta">持っている ${have.length} / ${need.length}</span>
             </span>
@@ -322,6 +332,9 @@
             low: false
           } });
         }
+        const nname = $('#nname').value.trim();
+        if (nname) await ND.send('setDesignImage', { design: key, slot: 'NAME', url: nname });
+        await ND.send('setDesignImage', { design: key, slot: 'HIDDEN', url: '' });
         $('#newform').reset();
         newPicked = new Set();
         renderNewUses();
