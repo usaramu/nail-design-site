@@ -24,18 +24,18 @@
     /* 上部：タイトルと検索（スクロールしても残る） */
     .top {
       position: sticky; top: 0; z-index: 5; background: var(--paper);
-      padding: 18px 18px 10px; border-bottom: 1px solid var(--line);
+      padding: 10px 20px 10px; border-bottom: 1px solid var(--line);
     }
-    .top .bar { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
-    .top h1 { margin: 0; padding: 0; font-size: 1.5rem; color: var(--ink); letter-spacing: .08em; }
-    .top h1::after { display: none; }
+    /* タイトルはほかのページと同じ（戻るリンク＋見出し） */
+    .pagehead { padding: 32px 20px 0; }
+    .pagehead h1 { margin-bottom: 4px; }
     .search {
-      width: 100%; margin-top: 12px; padding: 10px 16px; font: inherit; font-size: .9rem;
+      width: 100%; margin-top: 0; padding: 10px 16px; font: inherit; font-size: .9rem;
       color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 999px;
     }
     .search::placeholder { color: var(--muted); }
     .search:focus { outline: none; border-color: var(--gold); }
-    .chips { display: flex; gap: 6px; overflow-x: auto; margin: 10px -18px 0; padding: 0 18px 2px; scrollbar-width: none; }
+    .chips { display: flex; gap: 6px; overflow-x: auto; margin: 10px -20px 0; padding: 0 20px 2px; scrollbar-width: none; }
     .chips::-webkit-scrollbar { display: none; }
     .chips button {
       flex-shrink: 0; font-size: .74rem; padding: 3px 12px; border-radius: 999px;
@@ -44,7 +44,7 @@
     .chips button:hover { background: transparent; color: var(--bordeaux); }
     .chips button.on { background: var(--bordeaux); border-color: var(--bordeaux); color: #fff; }
 
-    main { padding: 4px 18px 0; }
+    main { padding: 4px 20px 0; }
     .group { margin-top: 22px; }
     .group h2 {
       border: 0; padding: 0; margin: 0 0 12px; font-size: .9rem; color: var(--bordeaux);
@@ -153,11 +153,11 @@
   </style>
 </head>
 <body>
+  <div class="pagehead">
+    <p><a href="../index.html">← ホームへ戻る</a> ／ <a href="shopping.html">購入リストへ</a></p>
+    <h1>持ち物リスト</h1>
+  </div>
   <header class="top">
-    <div class="bar">
-      <h1>持ち物</h1>
-      <span style="font-size:.78rem"><a href="shopping.html" style="color:var(--muted)">購入リスト</a>　<a href="../index.html" style="color:var(--muted)">ホーム</a></span>
-    </div>
     <input id="q" class="search" type="search" placeholder="名前・色番号・商品番号で検索" autocomplete="off">
     <div class="chips" id="chips"></div>
   </header>
