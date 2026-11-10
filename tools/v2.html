@@ -3,24 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#1b1417">
+  <meta name="theme-color" content="#fbf7f6">
   <title>持ち物リスト</title>
   <link rel="stylesheet" href="../assets/style.css?v=202611101814">
   <style>
-    /* ドレッサーの引き出しのような、暗い下地に色が映える版 */
+    /* 明るい下地。下のボタンで切り替え、タップで詳細シート */
     :root {
-      --ink: #f3ece8;
-      --muted: #a8979c;
-      --paper: #1b1417;
-      --surface: #251c20;
-      --line: #3a2c31;
-      --bordeaux: #e0a1ac;
-      --gold: #c9a46a;
+      --ink: #2a1c20;
+      --muted: #8a777c;
+      --paper: #fbf7f6;
+      --surface: #ffffff;
+      --line: #ecdfe0;
+      --bordeaux: #7a1f2b;
+      --gold: #b08d57;
       --rose: #b23a4e;
     }
     body { padding: 0 0 96px; max-width: 720px; }
-    button:hover { color: var(--paper); }
-    a { color: var(--gold); }
+    a { color: var(--bordeaux); }
 
     /* 上部：タイトルと検索（スクロールしても残る） */
     .top {
@@ -43,13 +42,13 @@
       flex-shrink: 0; font-size: .74rem; padding: 3px 12px; border-radius: 999px;
       border: 1px solid var(--line); color: var(--ink); background: transparent; white-space: nowrap;
     }
-    .chips button:hover { background: transparent; color: var(--gold); }
-    .chips button.on { background: var(--gold); border-color: var(--gold); color: var(--paper); }
+    .chips button:hover { background: transparent; color: var(--bordeaux); }
+    .chips button.on { background: var(--bordeaux); border-color: var(--bordeaux); color: #fff; }
 
     main { padding: 4px 18px 0; }
     .group { margin-top: 22px; }
     .group h2 {
-      border: 0; padding: 0; margin: 0 0 12px; font-size: .9rem; color: var(--gold);
+      border: 0; padding: 0; margin: 0 0 12px; font-size: .9rem; color: var(--bordeaux);
       display: flex; align-items: center; gap: 10px; letter-spacing: .06em;
     }
     .group h2::after { content: ''; flex: 1; height: 1px; background: var(--line); }
@@ -60,24 +59,24 @@
     .tip { padding: 0; border: 0; background: transparent; color: var(--ink); text-align: center; position: relative; border-radius: 0; }
     .tip:hover { background: transparent; color: var(--ink); }
     .tip .shape {
-      display: block; width: 58px; height: 76px; margin: 0 auto 8px;
-      border-radius: 29px 29px 10px 10px; object-fit: cover;
-      border: 1px dashed var(--line); background: var(--surface);
+      display: block; width: 62px; height: 62px; margin: 4px auto 8px;
+      border-radius: 50%; object-fit: cover;
+      border: 1px dashed var(--gold); background: var(--surface);
     }
-    .tip img.shape { border: 0; box-shadow: 0 0 0 1px var(--line), 0 0 0 4px var(--paper), 0 0 0 5px rgba(201,164,106,.45); }
+    .tip img.shape { border: 0; box-shadow: 0 0 0 1px var(--line), 0 0 0 4px var(--paper), 0 0 0 5px rgba(176,141,87,.6); }
     .tip:hover .shape, .tip:focus-visible .shape { transform: translateY(-2px); }
     .tip .shape { transition: transform .2s; }
     .nm { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: .7rem; line-height: 1.45; color: var(--muted); }
-    .low-dot { position: absolute; top: -2px; left: calc(50% + 20px); width: 10px; height: 10px; border-radius: 50%; background: var(--rose); border: 2px solid var(--paper); }
+    .low-dot { position: absolute; top: 2px; left: calc(50% + 20px); width: 10px; height: 10px; border-radius: 50%; background: var(--rose); border: 2px solid var(--paper); }
 
     /* パーツ：仕切りのあるパーツケースのように */
     .tray {
       display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
       background: var(--line); border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
     }
-    .cell { padding: 12px 8px 10px; border: 0; border-radius: 0; background: var(--paper); color: var(--ink); text-align: center; position: relative; }
-    .cell:hover { background: var(--surface); color: var(--ink); }
-    .cell .sq { display: block; width: 100%; aspect-ratio: 1 / 1; border-radius: 10px; object-fit: cover; background: var(--surface); margin-bottom: 8px; border: 1px dashed var(--line); }
+    .cell { padding: 12px 8px 10px; border: 0; border-radius: 0; background: var(--surface); color: var(--ink); text-align: center; position: relative; }
+    .cell:hover { background: var(--paper); color: var(--ink); }
+    .cell .sq { display: block; width: 100%; aspect-ratio: 1 / 1; border-radius: 10px; object-fit: cover; background: var(--paper); margin-bottom: 8px; border: 1px dashed var(--gold); }
     .cell img.sq { border: 0; }
     .cell .low-dot { top: 6px; left: auto; right: 6px; }
 
@@ -88,7 +87,7 @@
       padding: 12px 2px; border: 0; border-bottom: 1px solid var(--line); border-radius: 0;
       background: transparent; color: var(--ink); font-size: .9rem; font-weight: 300;
     }
-    .lines button:hover { background: transparent; color: var(--gold); }
+    .lines button:hover { background: transparent; color: var(--bordeaux); }
     .lines .mark { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
     .lines .nm2 { flex: 1; }
     .lines .low { font-size: .7rem; color: var(--rose); border: 1px solid var(--rose); padding: 0 6px; border-radius: 999px; }
@@ -99,7 +98,7 @@
     .dock {
       position: fixed; left: 0; right: 0; bottom: 0; z-index: 6;
       display: grid; grid-template-columns: repeat(5, 1fr);
-      background: rgba(27, 20, 23, .96); border-top: 1px solid var(--line);
+      background: rgba(255, 255, 255, .96); border-top: 1px solid var(--line); box-shadow: 0 -4px 18px rgba(122, 31, 43, .05);
       padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
     }
     .dock button {
@@ -108,19 +107,20 @@
     }
     .dock button b { display: block; font-family: var(--serif); font-weight: 700; font-size: .95rem; color: inherit; }
     .dock button:hover { background: transparent; color: var(--ink); }
-    .dock button.on { color: var(--gold); background: var(--surface); }
+    .dock button.on { color: var(--bordeaux); background: var(--paper); }
 
     .add {
       position: fixed; right: 18px; bottom: calc(76px + env(safe-area-inset-bottom)); z-index: 6;
       width: 52px; height: 52px; border-radius: 50%; padding: 0;
-      background: var(--gold); border: 0; color: var(--paper); font-size: 1.6rem; line-height: 1;
+      background: var(--bordeaux); border: 0; color: #fff; font-size: 1.6rem; line-height: 1;
+      box-shadow: 0 6px 16px rgba(122, 31, 43, .25);
     }
-    .add:hover { background: var(--bordeaux); color: var(--paper); }
+    .add:hover { background: #5c1620; color: #fff; }
 
     /* 詳細：下からせり上がるシート */
     #sheet {
       margin: auto auto 0; width: 100%; max-width: 560px; max-height: 88vh;
-      border: 0; border-top: 1px solid var(--gold); border-radius: 22px 22px 0 0;
+      border: 0; border-radius: 22px 22px 0 0; box-shadow: 0 -10px 30px rgba(42, 28, 32, .12);
       padding: 10px 22px calc(22px + env(safe-area-inset-bottom)); background: var(--surface);
     }
     #sheet[open] { animation: up .28s ease-out; }
@@ -128,31 +128,27 @@
     #sheet .grip { width: 40px; height: 4px; border-radius: 4px; background: var(--line); margin: 0 auto 16px; }
     #sheet .hero { display: flex; gap: 18px; align-items: center; }
     #sheet .hero .shape {
-      width: 96px; height: 124px; flex-shrink: 0; object-fit: cover; border-radius: 48px 48px 14px 14px;
-      background: var(--paper); border: 1px dashed var(--line); cursor: zoom-in;
+      width: 108px; height: 108px; flex-shrink: 0; object-fit: cover; border-radius: 50%;
+      background: var(--paper); border: 1px dashed var(--gold); cursor: zoom-in;
     }
     #sheet .hero .shape.round { width: 110px; height: 110px; border-radius: 16px; }
-    #sheet .hero img.shape { border: 0; box-shadow: 0 0 0 1px var(--line), 0 0 0 5px var(--surface), 0 0 0 6px rgba(201,164,106,.5); }
+    #sheet .hero img.shape { border: 0; box-shadow: 0 0 0 1px var(--line), 0 0 0 5px var(--surface), 0 0 0 6px rgba(176,141,87,.6); }
     #sheet .hero button.shape { cursor: pointer; color: var(--muted); font-size: .76rem; }
     #sheet h3 { font-family: var(--serif); font-weight: 700; font-size: 1.1rem; color: var(--ink); margin: 0 0 8px; line-height: 1.5; }
     #sheet .tg { display: flex; flex-wrap: wrap; gap: 4px; }
     #sheet .tg span { font-size: .7rem; padding: 0 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
-    #sheet .tg span.c { border-color: var(--gold); color: var(--gold); }
+    #sheet .tg span.c { border-color: var(--gold); color: var(--ink); }
     #sheet dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 18px 0 0; font-size: .86rem; }
     #sheet dt { color: var(--muted); }
     #sheet dd { margin: 0; word-break: break-all; }
     #sheet .acts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 20px; }
     #sheet .acts button { padding: 10px 6px; border-radius: 10px; border-color: var(--line); color: var(--ink); }
-    #sheet .acts button:hover { background: var(--paper); color: var(--gold); }
+    #sheet .acts button:hover { background: var(--paper); color: var(--bordeaux); }
     #sheet .acts .wide { grid-column: 1 / -1; border: 0; color: var(--muted); }
 
-    /* 編集画面も暗い下地に合わせる */
+    /* 編集画面も角を丸くしてそろえる */
     dialog#nd-dlg { border-radius: 16px; border-color: var(--line); background: var(--surface); }
-    dialog#nd-dlg h3 { color: var(--gold); }
     dialog#nd-dlg input, dialog#nd-dlg select { background: var(--paper); }
-    dialog#nd-dlg button[type=submit] { background: var(--gold); border-color: var(--gold); color: var(--paper); }
-    .nd-chip input:checked + span { background: var(--gold); border-color: var(--gold); color: var(--paper); }
-    .nd-chip span { background: var(--paper); }
 
     @media (prefers-reduced-motion: reduce) { #sheet[open] { animation: none; } }
   </style>
@@ -200,9 +196,9 @@
 
       let view = mine.filter(inTab);
 
-      // 絞り込み札：ジェルは質感、ほかは色と質感
+      // 絞り込み札（色と質感）
       const present = new Set(view.flatMap(tagsOfItem));
-      const pool = tab === 'ジェル' ? ND.textureTags : [...ND.colorTags, ...ND.textureTags];
+      const pool = [...ND.colorTags, ...ND.textureTags];
       const chips = pool.filter(t => present.has(t) || picked.has(t));
       $('#chips').innerHTML = chips.map(t => `<button data-tag="${ND.esc(t)}" class="${picked.has(t) ? 'on' : ''}">${ND.esc(t)}</button>`).join('');
       $('#chips').hidden = !chips.length;
@@ -215,13 +211,7 @@
       if (!view.length) { $('#list').innerHTML = '<p class="empty">見つかりません</p>'; return; }
 
       if (tab === 'ジェル') {
-        // 色の系統ごと（最初の色タグ）にまとめる
-        const fam = i => ND.tagsOf(i.colortag)[0] || 'その他';
-        const order = [...ND.colorTags, 'その他'];
-        $('#list').innerHTML = order.map(f => {
-          const g = view.filter(i => fam(i) === f);
-          return g.length ? `<section class="group"><h2>${ND.esc(f)}<small>${g.length}</small></h2><div class="tips">${g.map(tip).join('')}</div></section>` : '';
-        }).join('');
+        $('#list').innerHTML = `<section class="group"><div class="tips">${view.map(tip).join('')}</div></section>`;
       } else if (tab === 'パーツ') {
         const fill = (3 - view.length % 3) % 3;
         $('#list').innerHTML = `<section class="group"><div class="tray">${view.map(cell).join('')}${'<span class="cell"></span>'.repeat(fill)}</div></section>`;
