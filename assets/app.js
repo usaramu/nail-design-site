@@ -127,7 +127,11 @@ const ND = (() => {
     document.body.appendChild(dlg);
     dlg.querySelector('#nd-cancel').onclick = () => dlg.close();
     const unl = dlg.querySelector('#nd-unlink');
-    if (unl) unl.onclick = () => { dlg.close(); opts.onUnlink(); };
+    if (unl) unl.onclick = () => {
+      if (!confirm(`「${v.name}」をこのデザインから外しますか？\n（持ち物リスト・購入リストからは消えません）`)) return;
+      dlg.close();
+      opts.onUnlink();
+    };
     const del = dlg.querySelector('#nd-delete');
     if (del) del.onclick = () => {
       if (!confirm(`「${v.name}」を削除しますか？`)) return;

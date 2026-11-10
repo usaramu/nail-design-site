@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>デザイン</title>
-  <link rel="stylesheet" href="../assets/style.css?v=202611102045">
+  <link rel="stylesheet" href="../assets/style.css?v=202611102048">
   <style>
     .design { border-top: 1px solid var(--line); padding: 14px 0 0; margin-bottom: 8px; }
     .design > summary {
@@ -163,8 +163,8 @@
 
   <p id="msg" class="note"></p>
 
-  <script src="../assets/config.js?v=202611102045"></script>
-  <script src="../assets/app.js?v=202611102045"></script>
+  <script src="../assets/config.js?v=202611102048"></script>
+  <script src="../assets/app.js?v=202611102048"></script>
   <script>
     const $ = s => document.querySelector(s);
     let items = [];
@@ -614,10 +614,7 @@
       d.innerHTML = `<form>
           <div class="form-head" tabindex="-1" autofocus><h3>デザインを編集</h3></div>
           <div class="form-body"><label>デザイン名<input name="name" required value="${ND.esc(nameOf(KEY))}"></label>
-            <label>サムネイル写真<span class="thumbpick"><span class="tprev" data-tprev>${metaOf(KEY, 'THUMB') ? `<img src="${metaOf(KEY, 'THUMB')}" alt="">` : ''}</span><input type="file" accept="image/*" name="thumb"><span class="tbtns"><button type="button" data-tadjust>位置を調整</button><button type="button" data-tclear>外す</button></span></span></label>
-            <h4 class="sub">使うもの<small data-ucount></small></h4>
-            <ul class="usenames" data-unames></ul>
-            <p class="tbtns"><button type="button" data-ewizard>＋ 使うものを入力</button><button type="button" data-epick>持ち物から選び直す</button></p></div>
+            <label>サムネイル写真<span class="thumbpick"><span class="tprev" data-tprev>${metaOf(KEY, 'THUMB') ? `<img src="${metaOf(KEY, 'THUMB')}" alt="">` : ''}</span><input type="file" accept="image/*" name="thumb"><span class="tbtns"><button type="button" data-tadjust>位置を調整</button><button type="button" data-tclear>外す</button></span></span></label></div>
           <div class="form-foot"><button type="button" data-x>キャンセル</button><button type="submit">保存</button></div>
         </form>`;
       document.body.appendChild(d);
@@ -642,27 +639,6 @@
         if (out) { thumb = out; showT(); }
       };
       d.querySelector('[data-tclear]').onclick = () => { thumb = ''; showT(); };
-      // 使うもの：今の一覧を出し、入力・選び直しをこのシートの上で開く
-      const showUses = () => {
-        const list = sortUses(items.filter(i => i.status !== '削除' && KINDS.includes(i.category) && ND.designsOf(i).includes(KEY)));
-        d.querySelector('[data-ucount]').textContent = list.length ? ` ${list.length}` : '';
-        d.querySelector('[data-unames]').innerHTML = list.length
-          ? list.map(i => `<li class="${i.status === '持ち物' ? 'own' : 'need'}">${ND.esc(i.name)}<button type="button" data-unlink="${ND.esc(i.id)}" aria-label="${ND.esc(i.name)}を外す">×</button></li>`).join('')
-          : '<li class="none">まだありません</li>';
-      };
-      showUses();
-      // ×でこのデザインから外す
-      d.querySelector('[data-unames]').addEventListener('click', e => {
-        const b = e.target.closest('[data-unlink]');
-        if (!b) return;
-        const i = items.find(x => x.id === b.dataset.unlink);
-        if (i) { unlink(i); showUses(); }
-      });
-      d.querySelector('[data-ewizard]').onclick = () => openWizard(showUses);
-      d.querySelector('[data-epick]').onclick = () => {
-        const current = items.filter(i => ND.designsOf(i).includes(KEY)).map(i => i.id);
-        openPicker(current, nameOf(KEY), sel => { applyUses(KEY, sel); showUses(); });
-      };
       d.querySelector('form').onsubmit = e => {
         e.preventDefault();
         const name = new FormData(e.target).get('name').trim();
