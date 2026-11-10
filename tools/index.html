@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#fbf7f6">
   <title>持ち物リスト</title>
-  <link rel="stylesheet" href="../assets/style.css?v=202611101926">
+  <link rel="stylesheet" href="../assets/style.css?v=202611101943">
   <style>
     /* 明るい下地。下のボタンで切り替え、タップで詳細シート */
     :root {
@@ -192,15 +192,18 @@
   <button class="add" id="add" aria-label="持ち物を追加">＋</button>
   <nav class="dock" id="dock"></nav>
 
-  <script src="../assets/config.js?v=202611101926"></script>
-  <script src="../assets/app.js?v=202611101926"></script>
+  <script src="../assets/config.js?v=202611101943"></script>
+  <script src="../assets/app.js?v=202611101943"></script>
   <script>
     const $ = s => document.querySelector(s);
     let items = [];
     let tab = 'ジェル';
     let query = '';
     const picked = new Set();
-    const tagsOfItem = i => [...ND.tagsOf(i.colortag), ...ND.tagsOf(i.texture)];
+    // パーツは「種類」、それ以外は色タグ・質感タグ
+    const tagsOfItem = i => i.category === 'パーツ'
+      ? (i.parttype ? [String(i.parttype)] : [])
+      : [...ND.tagsOf(i.colortag), ...ND.tagsOf(i.texture)];
     const photoSrc = p => /^(https?:|data:)/.test(p) ? p : '../' + p;
     // 写真欄が「text:ベース」のときは、写真の代わりに文字の丸を出す
     const textOf = p => String(p || '').startsWith('text:') ? String(p).slice(5) : '';
@@ -226,13 +229,13 @@
 
       // 絞り込み札（色と質感）
       const present = new Set(view.flatMap(tagsOfItem));
-      const pool = [...ND.colorTags, ...ND.textureTags];
+      const pool = tab === 'パーツ' ? ND.partTypes : [...ND.colorTags, ...ND.textureTags, ...ND.partTypes];
       const chips = pool.filter(t => present.has(t) || picked.has(t));
       $('#chips').innerHTML = chips.map(t => `<button data-tag="${ND.esc(t)}" class="${picked.has(t) ? 'on' : ''}">${ND.esc(t)}</button>`).join('');
       $('#chips').hidden = !chips.length;
 
       const q = query.trim().toLowerCase();
-      if (q) view = view.filter(i => [i.name, i.color, i.sku, i.shop, i.note, i.colortag, i.texture]
+      if (q) view = view.filter(i => [i.name, i.color, i.sku, i.shop, i.note, i.colortag, i.texture, i.parttype]
         .some(v => String(v ?? '').toLowerCase().includes(q)));
       if (picked.size) view = view.filter(i => { const t = tagsOfItem(i); return [...picked].every(p => t.includes(p)); });
 
@@ -266,6 +269,7 @@
         ${i.photo ? visual(i, 'sq') : '<span class="sq"></span>'}
         ${i.low ? '<span class="usa">すくなめ</span>' : ''}
         ${i.photo ? "" : `<span class="nm">${ND.esc(i.name)}</span>`}
+        ${i.parttype ? `<span class="tx">#${ND.esc(i.parttype)}</span>` : ''}
       </button>`;
 
     const line = i => `
@@ -289,7 +293,7 @@
           ${photo}
           <div>
             <h3>${ND.esc(i.name)}</h3>
-            <div class="tg">${ND.tagsOf(i.colortag).map(t => `<span class="c">${ND.esc(t)}</span>`).join('')}${ND.tagsOf(i.texture).map(t => `<span>${ND.esc(t)}</span>`).join('')}${i.low ? '<span class="usa inline">すくなめ</span>' : ''}</div>
+            <div class="tg">${i.category === 'パーツ' && i.parttype ? `<span class="c">${ND.esc(i.parttype)}</span>` : ''}${i.category === 'パーツ' ? '' : ND.tagsOf(i.colortag).map(t => `<span class="c">${ND.esc(t)}</span>`).join('') + ND.tagsOf(i.texture).map(t => `<span>${ND.esc(t)}</span>`).join('')}${i.low ? '<span class="usa inline">すくなめ</span>' : ''}</div>
           </div>
         </div>
         ${rows ? `<dl>${rows}</dl>` : ''}

@@ -4,6 +4,8 @@ const ND = (() => {
   // 色タグ・質感タグ（シートの colortag / texture 列にカンマ区切りで入る）
   const colorTags = ['赤系', 'ピンク系', 'オレンジ系', 'ベージュ系', 'ブラウン系', '白系', '黒系', '青系', '紫系', '緑系', '黄系', 'ゴールド系', 'シルバー系', 'クリア', 'マルチ'];
   const textureTags = ['ツヤ', 'マット', 'シアー', 'ラメ', 'フラッシュ', 'マグネット', 'パール', 'メタリック', 'ホロ'];
+  // パーツの種類（シートの parttype 列。1つだけ）
+  const partTypes = ['シール', 'パーツ', 'ホログラム', 'パール・ビーズ', 'ストーン', 'その他'];
   const tagsOf = s => String(s || '').split(/[,、]\s*/).map(t => t.trim()).filter(Boolean);
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const configured = () => !!cfg.API_URL;
@@ -111,8 +113,9 @@ const ND = (() => {
         <label>購入先<input name="shop" value="${esc(v.shop)}"></label>
         <label>商品番号<input name="sku" value="${esc(v.sku)}" inputmode="text" autocomplete="off"></label>
         <label>メモ<input name="note" value="${esc(v.note)}"></label>
-        <fieldset class="nd-tags"><legend>色タグ</legend>${chips('colortag', colorTags, tagsOf(v.colortag))}</fieldset>
-        <fieldset class="nd-tags"><legend>質感タグ（1つ）</legend>${chips('texture', textureTags, tagsOf(v.texture).slice(0, 1), 'radio')}</fieldset>
+        <fieldset class="nd-tags" data-for="color"><legend>色タグ</legend>${chips('colortag', colorTags, tagsOf(v.colortag))}</fieldset>
+        <fieldset class="nd-tags" data-for="color"><legend>質感タグ（1つ）</legend>${chips('texture', textureTags, tagsOf(v.texture).slice(0, 1), 'radio')}</fieldset>
+        <fieldset class="nd-tags" data-for="part"><legend>種類（1つ）</legend>${chips('parttype', partTypes, [String(v.parttype || '')], 'radio')}</fieldset>
         <label>写真（任意）<input type="file" id="nd-file" accept="image/*"></label>
         <p class="note" id="nd-status" style="margin:4px 0 0"></p>
         <input type="hidden" name="photo" value="${esc(v.photo)}">
@@ -122,7 +125,14 @@ const ND = (() => {
       </form>`;
     document.body.appendChild(dlg);
     dlg.querySelector('#nd-cancel').onclick = () => dlg.close();
-    dlg.querySelectorAll('input[type=radio][name=texture]').forEach(r => {
+    // パーツのときは「種類」、それ以外は「色タグ・質感タグ」を出す
+    const catSel = dlg.querySelector('select[name=category]');
+    const showTags = () => dlg.querySelectorAll('.nd-tags').forEach(fs => {
+      fs.hidden = (fs.dataset.for === 'part') !== (catSel.value === 'パーツ');
+    });
+    catSel.addEventListener('change', showTags);
+    showTags();
+    dlg.querySelectorAll('input[type=radio]').forEach(r => {
       const chip = r.closest('label');
       chip.addEventListener('pointerdown', () => { r.dataset.was = r.checked ? '1' : ''; });
       r.addEventListener('click', () => { if (r.dataset.was) r.checked = false; r.dataset.was = ''; });
@@ -132,8 +142,10 @@ const ND = (() => {
       const fd = new FormData(e.target);
       const f = Object.fromEntries(fd);
       Object.keys(f).forEach(k => f[k] = f[k].trim());
-      f.colortag = fd.getAll('colortag').join(', ');
-      f.texture = fd.getAll('texture').join(', ');
+      const isPart = f.category === 'パーツ';
+      f.colortag = isPart ? '' : fd.getAll('colortag').join(', ');
+      f.texture = isPart ? '' : fd.getAll('texture').join(', ');
+      f.parttype = isPart ? (fd.get('parttype') || '') : '';
       const file = dlg.querySelector('#nd-file').files[0];
       try {
         if (file) {
@@ -231,5 +243,5 @@ const ND = (() => {
     return res.url;
   }
 
-  return { cfg, configured, esc, later, categories, colorTags, textureTags, tagsOf, list, listFast, send, openEditor, designsOf, lightbox, uploadPhoto, photoDataUrl, copyText };
+  return { cfg, configured, esc, later, categories, colorTags, textureTags, partTypes, tagsOf, list, listFast, send, openEditor, designsOf, lightbox, uploadPhoto, photoDataUrl, copyText };
 })();
