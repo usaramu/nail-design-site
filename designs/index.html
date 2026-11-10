@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>デザイン一覧</title>
-  <link rel="stylesheet" href="../assets/style.css?v=202611102034">
+  <link rel="stylesheet" href="../assets/style.css?v=202611102037">
   <style>
     .design { border-top: 1px solid var(--line); padding: 14px 0 0; margin-bottom: 8px; }
     .design > summary {
@@ -104,8 +104,8 @@
 
   <p id="msg" class="note"></p>
 
-  <script src="../assets/config.js?v=202611102034"></script>
-  <script src="../assets/app.js?v=202611102034"></script>
+  <script src="../assets/config.js?v=202611102037"></script>
+  <script src="../assets/app.js?v=202611102037"></script>
   <script>
     const $ = s => document.querySelector(s);
     let items = [];
@@ -303,11 +303,9 @@
       input.value = '';
     });
 
-    // 新しいデザイン：名前・使うもの・新しく買うものを、1枚のシートで入れる
+    // 新しいデザイン：名前とサムネイルを入れたら、デザインのページで「使うもの」を入力する
     $('#newbtn').onclick = () => {
       document.querySelector('#new-dlg')?.remove();
-      let picked = new Set();
-      const buys = [];   // 新しく買うもの（編集画面で1つずつ追加）
       const d = document.createElement('dialog');
       d.id = 'new-dlg';
       d.innerHTML = `<form>
@@ -315,58 +313,35 @@
           <div class="form-body">
             <label>デザイン名<input name="name" required></label>
             <label>サムネイル写真<span class="thumbpick"><span class="tprev" data-tprev></span><input type="file" accept="image/*" name="thumb"></span></label>
-            <h4 class="sub">使うもの（持っているもの）</h4>
-            <div class="uses" data-uses></div>
-            <button type="button" class="choose" data-pick>使うものを選ぶ</button>
-            <h4 class="sub">新しく買うもの</h4>
-            <ul class="buys" data-buys></ul>
-            <button type="button" class="choose" data-buy>＋ 買うものを追加</button>
           </div>
-          <div class="form-foot"><button type="button" data-x>キャンセル</button><button type="submit">作成</button></div>
+          <div class="form-foot"><button type="button" data-x>キャンセル</button><button type="submit">次へ（使うものを入力）</button></div>
         </form>`;
       document.body.appendChild(d);
-      const drawUses = () => { d.querySelector('[data-uses]').innerHTML = items.filter(i => picked.has(i.id)).map(useTile).join(''); };
-      const drawBuys = () => {
-        d.querySelector('[data-buys]').innerHTML = buys.map((f, k) => `
-          <li><span>${ND.esc(f.name)}<small>${ND.esc([f.category, f.color, f.shop].filter(Boolean).join(' ／ '))}</small></span>
-            <button type="button" data-rm="${k}" aria-label="外す">×</button></li>`).join('');
-      };
+      let thumb = '';
       d.querySelector('[data-x]').onclick = () => d.close();
-      // サムネイル：選んだらすぐ小さくして、見本を出す
       d.querySelector('input[name=thumb]').addEventListener('change', async e => {
         const f = e.target.files[0];
         if (!f) return;
-        d.thumbData = await ND.photoDataUrl(f);
-        d.querySelector('[data-tprev]').innerHTML = `<img src="${d.thumbData}" alt="">`;
+        thumb = await ND.photoDataUrl(f);
+        d.querySelector('[data-tprev]').innerHTML = `<img src="${thumb}" alt="">`;
       });
-      d.querySelector('[data-pick]').onclick = () => openPicker(picked, '使うもの', sel => { picked = new Set(sel); drawUses(); });
-      d.querySelector('[data-buy]').onclick = () => ND.openEditor(null, f => { buys.push(f); drawBuys(); });
-      d.querySelector('[data-buys]').addEventListener('click', e => {
-        const k = e.target.closest('[data-rm]')?.dataset.rm;
-        if (k != null) { buys.splice(+k, 1); drawBuys(); }
-      });
-      d.querySelector('form').onsubmit = e => {
+      d.querySelector('form').onsubmit = async e => {
         e.preventDefault();
-        const fd = new FormData(e.target);
-        const name = fd.get('name').trim();
+        const name = new FormData(e.target).get('name').trim();
         if (!name) return;
         const key = 'd' + Date.now().toString(36);
-        const thumb = d.thumbData || '';
-        if (thumb) setMeta(key, 'THUMB', thumb);
-        // 画面を先に変える
-        setMeta(key, 'NAME', name);
-        const pickedItems = items.filter(i => picked.has(i.id));
-        pickedItems.forEach(i => { i.designs = [...ND.designsOf(i), key].join(', '); });
-        buys.forEach((f, k) => items.push({ ...f, id: 'tmp' + Date.now() + k, status: '購入リスト', low: false, designs: key }));
-        d.close();
-        render();
-        // 保存は裏で
-        ND.later(async () => {
+        const btn = d.querySelector('button[type=submit]');
+        btn.disabled = true;
+        btn.textContent = '作成しています…';
+        try {
           await ND.send('setDesignImage', { design: key, slot: 'NAME', url: name });
           if (thumb) await ND.send('setDesignImage', { design: key, slot: 'THUMB', url: thumb });
-          for (const i of pickedItems) await ND.send('update', { id: i.id, fields: { designs: i.designs } });
-          for (const f of buys) await ND.send('add', { item: { ...f, status: '購入リスト', low: false, designs: key } });
-        }, reload);
+          location.href = `view.html?d=${encodeURIComponent(key)}&setup=1`;
+        } catch (err) {
+          alert('作成できませんでした: ' + err.message);
+          btn.disabled = false;
+          btn.textContent = '次へ（使うものを入力）';
+        }
       };
       d.showModal();
     };
