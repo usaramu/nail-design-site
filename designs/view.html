@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>デザイン</title>
-  <link rel="stylesheet" href="../assets/style.css?v=202611102024">
+  <link rel="stylesheet" href="../assets/style.css?v=202611102026">
   <style>
     .design { border-top: 1px solid var(--line); padding: 14px 0 0; margin-bottom: 8px; }
     .design > summary {
@@ -83,6 +83,13 @@
     .tobuy .bn { display: block; font-size: .9rem; line-height: 1.5; }
     .tobuy small { display: block; font-size: .72rem; color: var(--muted); }
     .tolist { margin: 10px 0 0; font-size: .82rem; }
+    button.use { padding: 0; border: 0; background: transparent; border-radius: 0; color: var(--ink); width: 100%; }
+    button.use:hover { background: transparent; }
+    .tobuy li { gap: 8px; }
+    .brow { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 0; border: 0; background: transparent; border-radius: 0; text-align: left; color: var(--ink); }
+    .brow:hover { background: transparent; color: var(--bordeaux); }
+    .bought { flex-shrink: 0; border-radius: 999px; font-size: .74rem; padding: 4px 12px; }
+    .btnrow { display: flex; flex-wrap: wrap; gap: 8px; }
   </style>
 </head>
 <body>
@@ -95,8 +102,8 @@
 
   <p id="msg" class="note"></p>
 
-  <script src="../assets/config.js?v=202611102024"></script>
-  <script src="../assets/app.js?v=202611102024"></script>
+  <script src="../assets/config.js?v=202611102026"></script>
+  <script src="../assets/app.js?v=202611102026"></script>
   <script>
     const $ = s => document.querySelector(s);
     let items = [];
@@ -222,7 +229,8 @@
                 ${tobuy.length ? `<ul class="tobuy">${tobuy.map(buyRow).join('')}</ul>
                   <p class="tolist"><a href="../tools/shopping.html">購入リストを開く ›</a></p>` : '<p class="uses-empty">全部そろっています</p>'}
               ` : '<p class="uses-empty">まだ選んでいません</p>'}
-              <p><button type="button" class="choose" data-choose="${ND.esc(key)}">使うものを選ぶ</button></p>
+              <p class="btnrow"><button type="button" class="choose" data-choose="${ND.esc(key)}">使うものを選ぶ</button>
+                <button type="button" class="choose" data-addbuy="${ND.esc(key)}">＋ 買うものを追加</button></p>
           </div>`;
       }).join('');
     }
@@ -239,15 +247,18 @@
 
     // 持っているもの：丸い写真
     const useTile = i => `
-      <div class="use">
+      <button type="button" class="use" data-item="${ND.esc(i.id)}" aria-label="${ND.esc(i.name)}を編集">
         ${ph(i)}${i.low ? bunny() : ''}
         <span class="nm">${ND.esc(i.name)}</span>
-      </div>`;
+      </button>`;
 
     // これから買うもの：小さな丸＋名前＋カテゴリ・購入先
     const buyRow = i => `
-      <li>${ph(i)}
-        <span class="bt"><span class="bn">${ND.esc(i.name)}</span><small>${ND.esc([i.category, i.color, i.shop].filter(Boolean).join(' ／ '))}</small></span>
+      <li>
+        <button type="button" class="brow" data-item="${ND.esc(i.id)}" aria-label="${ND.esc(i.name)}を編集">${ph(i)}
+          <span class="bt"><span class="bn">${ND.esc(i.name)}</span><small>${ND.esc([i.category, i.color, i.shop].filter(Boolean).join(' ／ '))}</small></span>
+        </button>
+        <button type="button" class="bought" data-bought="${ND.esc(i.id)}">買った</button>
       </li>`;
 
     // 使うものを選ぶシート（ジェル・パーツを丸で並べて、タップで選ぶ）
@@ -352,6 +363,41 @@
     });
 
     const KEY = new URLSearchParams(location.search).get('d') || '';
+
+    // 使うもの・買うものをタップしたら、その場で編集（削除も）
+    $('#list').addEventListener('click', e => {
+      const t = e.target.closest('[data-item]');
+      if (t) {
+        const i = items.find(x => x.id === t.dataset.item);
+        if (!i) return;
+        return ND.openEditor(i, f => {
+          Object.assign(i, f);
+          render();
+          ND.later(() => ND.send('update', { id: i.id, fields: f }), reload);
+        }, { onDelete: () => { ND.removeItem(i, reload); render(); } });
+      }
+      const bt = e.target.closest('[data-bought]');
+      if (bt) {
+        const i = items.find(x => x.id === bt.dataset.bought);
+        if (!i) return;
+        i.status = '持ち物';
+        i.low = false;
+        render();
+        return ND.later(async () => {
+          await ND.send('setStatus', { id: i.id, status: '持ち物' });
+          await ND.send('setLow', { id: i.id, low: false });
+        }, reload);
+      }
+      const ab = e.target.closest('[data-addbuy]');
+      if (ab) {
+        ND.openEditor(null, f => {
+          const item = { ...f, status: '購入リスト', low: false, designs: KEY };
+          items.push({ ...item, id: 'tmp' + Date.now() });
+          render();
+          ND.later(() => ND.send('add', { item }), reload);
+        });
+      }
+    });
 
     // 編集：デザイン名を変える
     $('#rename').onclick = () => {
