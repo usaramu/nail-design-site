@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>デザイン</title>
-  <link rel="stylesheet" href="../assets/style.css?v=202611111610">
+  <link rel="stylesheet" href="../assets/style.css?v=202611112114">
   <style>
     .design { border-top: 1px solid var(--line); padding: 14px 0 0; margin-bottom: 8px; }
     .design > summary {
@@ -150,6 +150,7 @@
     .usenames li button { border: 0; background: transparent; color: var(--muted); font-size: .9rem; line-height: 1; padding: 0 4px; border-radius: 50%; }
     .usenames li button:hover { background: transparent; color: var(--bordeaux); }
     .usenames li.none { border: 0; background: transparent; color: var(--muted); padding: 0; }
+      .upnote { margin: 6px 0 0; font-size: .8rem; color: var(--bordeaux); }
   </style>
 </head>
 <body>
@@ -163,8 +164,8 @@
 
   <p id="msg" class="note"></p>
 
-  <script src="../assets/config.js?v=202611111610"></script>
-  <script src="../assets/app.js?v=202611111610"></script>
+  <script src="../assets/config.js?v=202611112114"></script>
+  <script src="../assets/app.js?v=202611112114"></script>
   <script>
     const $ = s => document.querySelector(s);
     let items = [];
@@ -211,6 +212,7 @@
 
     // 枠ごとの画像URL：差し替えたもの → 既定の画像 の順
     // 大きな画像は 45,000 文字ずつ「STEP2A#0, #1…」に分けて保存し、本体には「chunks:個数」を入れる
+    const uploading = {};   // 指示画像の保存の進み具合（枠ごと）
     function imageFor(key, slot) {
       const hit = images.find(x => x.design === key && x.slot === slot);
       const url = hit ? String(hit.url ?? '') : '';
@@ -268,6 +270,7 @@
                 ? `<img class="zoom" src="${ND.esc(src)}" alt="${ND.esc(s.label)}">`
                 : `<div class="empty-img">写真を入れてください</div>`}
               <figcaption>${ND.esc(s.label)}</figcaption>
+              ${uploading[s.slot] ? `<p class="upnote">${ND.esc(uploading[s.slot])}</p>` : ''}
               <button type="button" data-act="pick" data-design="${ND.esc(key)}" data-slot="${s.slot}">写真を入れる・差し替える</button>
               <input type="file" accept="image/*" data-design="${ND.esc(key)}" data-slot="${s.slot}">
             </figure>`;
@@ -457,19 +460,25 @@
       if (!file) return;
       const { design, slot } = input.dataset;
       try {
-        // 長辺1400pxに縮めて、まず画面に出す。保存は裏で分けて送る
-        const data = await ND.imageData(file, 1400, .8);
+        // 長辺1200pxに縮めて、まず画面に出す。保存は裏で分けて送る（失敗したら2回までやり直す）
+        const data = await ND.imageData(file, 1200, .72);
         const SIZE = 45000;
         const chunks = [];
         for (let k = 0; k < data.length; k += SIZE) chunks.push(data.slice(k, k + SIZE));
         chunks.forEach((c, k) => setMeta(design, `${slot}#${k}`, c));
         setMeta(design, slot, 'chunks:' + chunks.length);
-        render();
+        const total = chunks.length + 1;
+        const progress = n => { uploading[slot] = n < total ? `保存中… ${n}/${total}（このページを閉じないでね）` : ''; render(); };
+        const retry = async fn => { for (let t = 0; ; t++) { try { return await fn(); } catch (e) { if (t >= 2) throw e; await new Promise(r => setTimeout(r, 1500)); } } };
+        progress(0);
         ND.later(async () => {
-          for (let k = 0; k < chunks.length; k++) {
-            await ND.send('setDesignImage', { design, slot: `${slot}#${k}`, url: chunks[k] });
-          }
-          await ND.send('setDesignImage', { design, slot, url: 'chunks:' + chunks.length });
+          try {
+            for (let k = 0; k < chunks.length; k++) {
+              await retry(() => ND.send('setDesignImage', { design, slot: `${slot}#${k}`, url: chunks[k] }));
+              progress(k + 1);
+            }
+            await retry(() => ND.send('setDesignImage', { design, slot, url: 'chunks:' + chunks.length }));
+          } finally { progress(total); }
         }, reload);
       } catch (err) {
         alert('写真を読み込めませんでした: ' + err.message);
